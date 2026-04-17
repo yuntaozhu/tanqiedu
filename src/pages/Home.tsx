@@ -1,7 +1,8 @@
 import { motion, Variants } from 'framer-motion';
 import { 
   PlayCircle, Calendar, Eye, Layers, Bot, ActivitySquare, Printer, Camera, 
-  XCircle, CheckCircle2, ChevronRight, Box, Cpu, Sparkles, Rocket 
+  XCircle, CheckCircle2, ChevronRight, Box, Cpu, Sparkles, Rocket,
+  Quote, Flag, Heart, ShieldCheck, Target
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -95,7 +96,7 @@ export default function Home() {
       </section>
 
       {/* 3. Bento Box Scenarios */}
-      <section className="py-24 bg-slate-900 text-white mt-12 mb-12 relative overflow-hidden">
+      <section className="py-24 bg-slate-900 text-white mt-12 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUpVariants}
@@ -160,7 +161,83 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. Comparison */}
+      {/* 4. Company Background & Brand Story */}
+      <section className="py-24 bg-white relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <motion.div 
+            className="text-center mb-16"
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUpVariants}
+          >
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">探奇星球：信任与热爱的源头</h2>
+            <p className="text-xl text-slate-500 max-w-2xl mx-auto">做客户信任、值得尊敬的教育公司，共同培养未来的创造者。</p>
+          </motion.div>
+
+          <motion.div 
+            className="grid lg:grid-cols-2 gap-12 items-stretch"
+            variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}
+          >
+            {/* Left: Origin & Values */}
+            <motion.div variants={fadeUpVariants} className="space-y-6 flex flex-col h-full">
+              <div className="bg-slate-50 p-10 rounded-[2.5rem] border border-slate-100 relative flex-1">
+                <Quote className="absolute top-8 right-8 text-primary/10" size={80} />
+                <div className="inline-block px-4 py-1.5 bg-primary/10 text-primary font-bold text-sm rounded-full mb-6">品牌原点</div>
+                <p className="text-2xl font-serif text-slate-800 mb-6 leading-relaxed">
+                  “落日山水好，漾舟信归风。<br/>
+                  <span className="text-primary font-black">探奇不觉远，因以缘源穷。</span>”
+                </p>
+                <p className="text-slate-500 text-sm font-medium mb-6">— 唐 · 王维《蓝田山石门精舍》</p>
+                <div className="text-slate-600 leading-relaxed">
+                  由兴趣引发的学习就像是一场有兴致的旅游。在好奇心的驱使下，每一次成绩都是路上的美景。过程不觉辛苦，终能到达梦想地。
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                 <div className="bg-blue-50 border border-blue-100 p-8 rounded-[2rem]">
+                   <Flag className="text-blue-500 mb-4" size={32}/>
+                   <div className="font-bold text-slate-900 text-lg mb-2">企业使命</div>
+                   <div className="text-slate-600 leading-snug">让世界充满<br/>更多会玩又有创造力的人</div>
+                 </div>
+                 <div className="bg-orange-50 border border-orange-100 p-8 rounded-[2rem]">
+                   <Heart className="text-orange-500 mb-4" size={32}/>
+                   <div className="font-bold text-slate-900 text-lg mb-2">价值观</div>
+                   <div className="text-slate-600 leading-snug">简单、诚信、勤奋、坚韧、合作</div>
+                 </div>
+              </div>
+            </motion.div>
+
+            {/* Right: Academic & Practical Backing */}
+            <motion.div variants={fadeUpVariants} className="flex flex-col gap-6 h-full">
+               <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-10 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden flex-1">
+                  <div className="absolute right-0 bottom-0 w-64 h-64 bg-primary/20 blur-[80px] pointer-events-none" />
+                  <ShieldCheck size={48} className="text-emerald-400 mb-8" />
+                  <h3 className="text-3xl font-black mb-6 tracking-tight">顶级学术与实践背书</h3>
+                  <p className="text-slate-300 leading-relaxed text-lg mb-8">
+                    由<span className="text-white font-bold mx-1">中科院、北师大</span>专家团队主导，引进基于美国麻省理工 PAPERT 博士的<span className="text-white font-bold mx-1">建构主义理论 STEAM 课程</span>。将幼儿教育建立在坚实的科学与技术前沿基础之上。
+                  </p>
+                  <div className="p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 flex gap-4 items-start">
+                    <Target className="text-yellow-400 shrink-0 mt-1" size={24} />
+                    <div>
+                      <span className="font-bold text-white text-lg block mb-1">权威园所实践</span>
+                      <span className="text-slate-300 leading-snug block">课程已在北京众多一级一类重点幼儿园实践，并与<span className="text-white font-bold">北京航天机关幼儿园</span>联合出版园本教材。</span>
+                    </div>
+                  </div>
+               </div>
+
+               <div className="bg-emerald-50 border border-emerald-100 p-8 rounded-[2rem] flex items-center gap-6">
+                  <div className="w-20 h-20 bg-emerald-200/50 rounded-2xl flex items-center justify-center shrink-0 border border-emerald-300 shadow-inner">
+                     <span className="text-4xl filter drop-shadow-md">🦖</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-slate-900 mb-2">专属玩伴：小探宝</h4>
+                    <p className="text-slate-600 leading-relaxed">探奇星球是真实世界的缩印版。活泼聪明的小探宝将陪伴孩子们，全面提升专注力与创造能力。</p>
+                  </div>
+               </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 5. Comparison */}
       <section className="py-24 max-w-7xl mx-auto px-6 w-full">
         <motion.div 
           className="text-center mb-16"
@@ -217,7 +294,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* 5. Courseware System Routing */}
+      {/* 6. Courseware System Routing */}
       <section className="py-24 max-w-7xl mx-auto px-6 w-full text-center">
          <motion.div 
             initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer}
