@@ -1,0 +1,8 @@
+{
+  "name": "探奇具身教育",
+  "description": "A magical drawing companion for kids. Speak to Xiao Yi to create coloring pages!",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "prompt": ""
+}

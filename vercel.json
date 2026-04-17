@@ -1,0 +1,13 @@
+
+{
+  "rewrites": [
+    {
+      "source": "/ideogram-proxy/:match*",
+      "destination": "https://api.ideogram.ai/:match*"
+    },
+    {
+      "source": "/replicate-proxy/:match*",
+      "destination": "https://api.replicate.com/:match*"
+    }
+  ]
+}
