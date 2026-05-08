@@ -3,8 +3,8 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { addJob } from '../../_store';
 import { Buffer } from 'buffer';
 
-// Hardcoded API Key to ensure serverless function works without env var configuration
-const API_KEY = 'AIzaSyB-9VLihuSqGBlXhtplM-0tYoTJtcxPkuw';
+// Hardcoded API Key as fallback to ensure serverless function works
+const API_KEY = process.env.VITE_GEMINI_API_KEY || 'AIzaSyBySQCaSZJUJcHSoBlPy_TM7VoNJ6ahHF4';
 
 const GENERATE_DRAWING_TOOL = {
   name: 'generate_drawing',

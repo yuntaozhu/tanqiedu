@@ -25,7 +25,7 @@ export class GoogleApiService {
    * This MUST remain using @google/genai as it supports the WebSocket streaming protocol.
    */
   async connectLive(config: LiveConfig) {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || (typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined);
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyBySQCaSZJUJcHSoBlPy_TM7VoNJ6ahHF4';
     if (!apiKey) {
       logger.error("GEMINI_API_KEY is missing in GoogleApiService");
       throw new Error("GEMINI_API_KEY is missing.");
