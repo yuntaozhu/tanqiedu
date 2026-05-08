@@ -870,7 +870,7 @@ export class GdmLiveAudio extends LitElement {
         this.isWorkletInitialized = true;
       }
       const sessionPromise = this.googleApi.connectLive({
-        model: 'gemini-2.0-flash-exp',
+        model: 'gemini-3.1-flash-live-preview',
         systemInstruction: `你是绘画大师"探奇"。
         1. 严禁用任何英文或拼音交流。
         2. 说话语气要像温柔的幼儿园老师。
@@ -889,7 +889,7 @@ export class GdmLiveAudio extends LitElement {
               if (this.isSocketPoisoned || !this.isRecording || this.isMuted || this.isProcessingTool) return;
               try { 
                 const session = await sessionPromise;
-                session.sendRealtimeInput([createBlob(event.data)]);
+                session.sendRealtimeInput({ audio: createBlob(event.data) });
               } catch (e) { 
                 this.isSocketPoisoned = true; 
               }
