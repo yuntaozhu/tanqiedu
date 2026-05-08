@@ -1,6 +1,6 @@
 import { motion, Variants } from 'framer-motion';
 import { 
-  PlayCircle, Calendar, Eye, Layers, Bot, SquareActivity, Printer, Camera, 
+  CirclePlay, Calendar, Eye, Layers, Bot, SquareActivity, Printer, Camera, 
   CircleX, CircleCheck, ChevronRight, Box, Cpu, Sparkles, Rocket,
   Quote, Flag, Heart, ShieldCheck, Target
 } from 'lucide-react';
@@ -51,7 +51,7 @@ export default function Home() {
           
           <motion.div variants={fadeUpVariants} className="flex flex-col sm:flex-row gap-5 justify-center items-center">
             <button className="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-2xl font-bold text-lg hover:bg-primary/90 hover:scale-105 transition-all shadow-xl shadow-primary/25 flex items-center justify-center gap-3">
-              <PlayCircle size={24} /> 观看概念影片
+              <CirclePlay size={24} /> 观看概念影片
             </button>
             <Link to="/products" className="w-full sm:w-auto px-8 py-4 bg-slate-800/80 text-white border border-slate-700 backdrop-blur-md rounded-2xl font-bold text-lg hover:bg-slate-700 hover:scale-105 transition-all flex items-center justify-center gap-2">
               <Calendar size={20} /> 预约线下体验

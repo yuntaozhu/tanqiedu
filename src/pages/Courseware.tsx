@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Pen, Eraser, Bot, 
-  PartyPopper, Play, Volume2, Loader2, Maximize2, Minimize2,
+  PartyPopper, Play, Volume2, LoaderCircle, Maximize2, Minimize2,
   Home, X, RefreshCw, PowerOff, Power, Pause, Trash2, Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -492,7 +492,7 @@ export default function Courseware() {
                         `}
                       >
                         {robotStatus === 'idle' && <><Play size={24} /> {currentPage.type === 'robot_test' ? '开启体感判定并下发指令' : '触发机器互动'}</>}
-                        {robotStatus === 'executing' && <><Loader2 size={24} className="animate-spin" /> 小布米正在执行与感知...</>}
+                        {robotStatus === 'executing' && <><LoaderCircle size={24} className="animate-spin" /> 小布米正在执行与感知...</>}
                         {robotStatus === 'done' && <><RefreshCw size={24} /> 重新触发</>}
                       </button>
                     )}
