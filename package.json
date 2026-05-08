@@ -20,6 +20,7 @@
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "fabric": "^5.5.2",
+    "flv.js": "^1.6.2",
     "framer-motion": "^12.38.0",
     "lit": "^3.0.0",
     "lucide-react": "^1.8.0",

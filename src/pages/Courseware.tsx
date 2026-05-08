@@ -2,34 +2,40 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Pen, Eraser, Bot, 
-  PartyPopper, Play, Loader2, Maximize2, Minimize2,
+  PartyPopper, Play, Volume2, Loader2, Maximize2, Minimize2,
   Home, X, RefreshCw, PowerOff, Power, Pause, Trash2, Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fabric } from 'fabric';
 import { Application, Graphics } from 'pixi.js';
+import flvjs from 'flv.js';
 
 // 1. Two-level Mock Data Structure (Phase 2 with 10 TPR Pages)
 const mockData = [
   {
     id: "c1", 
-    title: "第一节课：TPR 英语动作启蒙 (核心十步法)",
+    title: "第一节课：What Do I See? (TPR 绘本精读)",
     pages: [
-      { id: "p1", type: "normal_image", content: "https://placehold.co/1280x720/1e293b/3b82f6?text=Lesson+1:+Let's+Move!&font=Montserrat" },
-      { id: "p2", type: "normal_video", content: "https://www.w3schools.com/html/mov_bbb.mp4" },
-      // 步骤 1~3：观察与模仿机制 (Observe)
-      { id: "p3", type: "robot_explain", content: "Look at me! Jump! (看着我，跳跃)", robotEvent: { action: "START", duration: 2500 } },
-      { id: "p4", type: "robot_explain", content: "Look at me! Wave! (看着我，挥手)", robotEvent: { action: "SWING", duration: 3000 } },
-      { id: "p5", type: "robot_explain", content: "Look at me! Clap! (看着我，拍手)", robotEvent: { action: "CHEER", duration: 2500 } },
-      // 步骤 4~5：共同执行机制 (Co-Action)
-      { id: "p6", type: "robot_practice", content: "Stand up! Let's Jump together! (站起来一起跳)", robotEvent: { action: "START", duration: 3000 } },
-      { id: "p7", type: "robot_practice", content: "Hands up! Let's Wave! (举起手一起挥挥)", robotEvent: { action: "SWING", duration: 3000 } },
-      // 步骤 6：游戏互动机制 (Game Interaction - Pixi.js)
-      { id: "p8", type: "pixi_game", content: "Catch the Magic Bubbles! (点击消除魔法泡泡)" },
-      // 步骤 7：独立考核机制 (Independent Test)
-      { id: "p9", type: "robot_test", content: "Now listen carefully... JUMP! (听我说，不要看我，直接跳！)", robotEvent: { action: "DEFAULT", duration: 4000 } },
-      // 步骤 8：正向激励机制 (Reward)
-      { id: "p10", type: "reward", content: "Excellent! You are a TPR Master!" }
+      // 1. Cover
+      { id: "p1", type: "book_page", content: "https://placehold.co/800x800/2dd4bf/ffffff?text=What+Do+I+See%3F&font=Montserrat", text: "What Do I See?" },
+      // 2. TPR Introduce "See"
+      { id: "p2", type: "robot_explain", content: "Make binoculars like this! 'I see...'", robotEvent: { action: "START", duration: 2500 } },
+      // 3. Book: One
+      { id: "p3", type: "book_page", content: "https://placehold.co/800x1200/fcd34d/ffffff?text=Sandcastle", text: "I see one." },
+      // 4. Book: Two + TPR Practice
+      { id: "p4", type: "robot_practice", content: "Show me TWO fingers! 'I see two.'", robotEvent: { action: "CHEER", duration: 3000 } },
+      // 5. Book: Three
+      { id: "p5", type: "book_page", content: "https://placehold.co/800x1200/fca5a5/ffffff?text=Umbrellas", text: "I see three." },
+      // 6. Book: Four + TPR Seagull
+      { id: "p6", type: "robot_practice", content: "Fly like a seagull! 'I see four.'", robotEvent: { action: "SWING", duration: 3500 } },
+      // 7. Book: Five
+      { id: "p7", type: "book_page", content: "https://placehold.co/800x1200/60a5fa/ffffff?text=Clouds", text: "I see five." },
+      // 8. Interactive Game (Pixi) - Clouds
+      { id: "p8", type: "pixi_game", content: "Tap to catch the clouds!" },
+      // 9. Independent Test ("Me")
+      { id: "p9", type: "robot_test", content: "Point to yourself: 'I see me!'", robotEvent: { action: "DEFAULT", duration: 4000 } },
+      // 10. Reward
+      { id: "p10", type: "reward", content: "Great Reader!" }
     ]
   },
   {
@@ -48,38 +54,51 @@ const PixiInteractiveSlide = () => {
     
     useEffect(() => {
         let active = true;
-        let app = new Application();
+        let app: Application | null = new Application();
         
         const initPixi = async () => {
-            if (!pixiContainer.current) return;
+            if (!pixiContainer.current || !app) return;
             // Initialize Pixi Application
             await app.init({
                 backgroundAlpha: 0,
-                resizeTo: pixiContainer.current,
                 autoDensity: true,
                 resolution: window.devicePixelRatio || 1,
             });
             
             if (!active) {
-                app.destroy(true);
+                try {
+                   app.destroy(true);
+                } catch(e) {}
                 return;
             }
             
             pixiContainer.current.appendChild(app.canvas);
+            
+            const handleResize = () => {
+                if (active && app && pixiContainer.current) {
+                    app.renderer.resize(pixiContainer.current.clientWidth, pixiContainer.current.clientHeight);
+                }
+            };
+            window.addEventListener('resize', handleResize);
+            handleResize();
 
-            // Generate drifting bubbles (TPR game element)
+            const currentApp = app;
+            // Generate drifting clouds (TPR game element)
             const bubbles: Graphics[] = [];
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 15; i++) {
                 const bubble = new Graphics();
-                const radius = Math.random() * 30 + 20;
+                const radius = Math.random() * 20 + 30; // base radius
                 
-                // Draw circle
+                // Draw fluffy cloud shape
                 bubble.circle(0, 0, radius);
-                const randomColor = Math.floor(Math.random()*16777215);
-                bubble.fill({ color: randomColor, alpha: 0.8 });
+                bubble.circle(radius * 0.7, -radius * 0.3, radius * 0.7);
+                bubble.circle(-radius * 0.7, -radius * 0.3, radius * 0.7);
+                bubble.circle(radius * 0.3, -radius * 0.6, radius * 0.6);
+                const randomColor = Math.random() > 0.5 ? 0xffffff : 0xf1f5f9; // white variants
+                bubble.fill({ color: randomColor, alpha: 0.95 });
                 
-                bubble.x = Math.random() * app.screen.width;
-                bubble.y = app.screen.height + Math.random() * 500;
+                bubble.x = Math.random() * currentApp.screen.width;
+                bubble.y = currentApp.screen.height + Math.random() * 500;
                 
                 // Add interactivity
                 bubble.eventMode = 'static';
@@ -88,35 +107,36 @@ const PixiInteractiveSlide = () => {
                     // Pop animation effect via Confetti
                     const rect = pixiContainer.current?.getBoundingClientRect();
                     if (rect) {
-                       const xRatio = bubble.x / app.screen.width;
-                       const yRatio = bubble.y / app.screen.height;
+                       const xRatio = bubble.x / currentApp.screen.width;
+                       const yRatio = bubble.y / currentApp.screen.height;
                        confetti({ 
-                           particleCount: 15, spread: 50, origin: { x: xRatio, y: yRatio },
-                           colors: ['#'+randomColor.toString(16).padStart(6, '0')] 
+                           particleCount: 20, spread: 60, origin: { x: xRatio, y: yRatio },
+                           colors: ['#ffffff', '#bae6fd'] 
                        });
                     }
-                    bubble.y = app.screen.height + 200; // Reset to bottom
+                    bubble.y = currentApp.screen.height + 200; // Reset to bottom
                 });
 
                 // Custom speeds
-                (bubble as any).speedY = 1 + Math.random() * 2;
-                (bubble as any).speedX = (Math.random() - 0.5) * 1;
+                (bubble as any).speedY = 1 + Math.random() * 2.5;
+                (bubble as any).speedX = (Math.random() - 0.5) * 1.5;
                 
-                app.stage.addChild(bubble);
+                currentApp.stage.addChild(bubble);
                 bubbles.push(bubble);
             }
 
             // Animation Loop
-            app.ticker.add(() => {
+            if (!app) return;
+            currentApp.ticker.add(() => {
                 bubbles.forEach(bubble => {
                     bubble.y -= (bubble as any).speedY;
                     bubble.x += (bubble as any).speedX;
                     
                     if (bubble.y < -100) {
-                        bubble.y = app.screen.height + 100;
-                        bubble.x = Math.random() * app.screen.width;
+                        bubble.y = currentApp.screen.height + 100;
+                        bubble.x = Math.random() * currentApp.screen.width;
                     }
-                    if (bubble.x < 0 || bubble.x > app.screen.width) {
+                    if (bubble.x < 0 || bubble.x > currentApp.screen.width) {
                         (bubble as any).speedX *= -1;
                     }
                 });
@@ -127,13 +147,67 @@ const PixiInteractiveSlide = () => {
 
         return () => {
             active = false;
-            if (app) app.destroy({ removeView: true });
+            if (app) {
+                try {
+                    app.destroy({ removeView: true });
+                } catch(e) {}
+                app = null;
+            }
         };
     }, []);
 
     return <div ref={pixiContainer} className="absolute inset-0 w-full h-full z-10 overflow-hidden" />;
 };
 
+
+// --- FLV JS Video Player ---
+const FlvVideoPlayer = ({ src, videoRef, onPlay, onPause }: any) => {
+    useEffect(() => {
+        let flvPlayer: flvjs.Player | null = null;
+        if (flvjs.isSupported() && src && src.endsWith('.flv') && videoRef.current) {
+            flvPlayer = flvjs.createPlayer({
+                type: 'flv',
+                url: src
+            });
+            flvPlayer.attachMediaElement(videoRef.current);
+            flvPlayer.load();
+            // Optional: flvPlayer.play();
+        }
+
+        return () => {
+            if (flvPlayer) {
+                try {
+                    flvPlayer.pause();
+                    flvPlayer.unload();
+                    flvPlayer.detachMediaElement();
+                    flvPlayer.destroy();
+                } catch (e) {}
+            }
+        };
+    }, [src, videoRef]);
+
+    return (
+        <video 
+            ref={videoRef}
+            src={(!src || src.endsWith('.flv')) ? undefined : src} 
+            autoPlay
+            onPlay={onPlay}
+            onPause={onPause}
+            className="w-full h-full object-contain bg-black"
+        />
+    );
+};
+
+
+const playAudio = (text: string) => {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.85;
+        window.speechSynthesis.speak(utterance);
+    }
+};
 
 export default function Courseware() {
   // Navigation State
@@ -198,10 +272,16 @@ export default function Courseware() {
         
         // Handle Resize
         const resizeObserver = new ResizeObserver((entries) => {
+            const currentCanvas = fabricCanvasRef.current;
+            if (!currentCanvas) return;
             for (let entry of entries) {
-                canvas.setWidth(entry.contentRect.width);
-                canvas.setHeight(entry.contentRect.height);
-                canvas.renderAll();
+                try {
+                    currentCanvas.setWidth(entry.contentRect.width);
+                    currentCanvas.setHeight(entry.contentRect.height);
+                    currentCanvas.renderAll();
+                } catch (err) {
+                    console.error("Fabric resize error", err);
+                }
             }
         });
         
@@ -339,14 +419,34 @@ export default function Courseware() {
                 <img src={currentPage.content} alt="slide" className="w-full h-full object-cover" draggable={false} />
               )}
               
+              {currentPage.type === 'book_page' && (
+                 <div className="w-full h-full bg-white flex flex-col items-center p-8 text-black relative">
+                     {/* Safe area for canvas drawing over the image */}
+                     <div className="flex-1 w-full max-w-4xl flex items-center justify-center min-h-0 mb-8 pt-6 pointer-events-none">
+                         <img src={currentPage.content} alt="book page" className="max-h-full w-auto object-contain shadow-md rounded-md pointer-events-auto select-none" draggable={false} />
+                     </div>
+                     <div className="flex flex-col items-center gap-6 mb-8 shrink-0 relative z-50 pointer-events-auto">
+                         <h2 className="text-5xl md:text-7xl font-semibold tracking-wide text-gray-800">{currentPage.text}</h2>
+                         <button 
+                             onClick={() => playAudio(currentPage.text || "")}
+                             className="flex items-center gap-3 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-full transition active:translate-y-1 shadow-[0_4px_0_theme(colors.gray.800)] active:shadow-none"
+                         >
+                             <Play size={24} className="fill-current text-green-400" />
+                             <div className="w-48 h-4 bg-gray-500 rounded-full overflow-hidden flex items-center shadow-inner relative">
+                                <div className="absolute left-0 top-0 bottom-0 bg-green-400 w-1/2"></div>
+                                <Volume2 size={14} className="absolute right-2 text-gray-300 opacity-50" />
+                             </div>
+                         </button>
+                     </div>
+                 </div>
+              )}
+              
               {currentPage.type === 'normal_video' && (
-                <video 
-                  ref={videoRef}
+                <FlvVideoPlayer 
                   src={currentPage.content} 
-                  autoPlay
+                  videoRef={videoRef}
                   onPlay={() => setIsVideoPlaying(true)}
                   onPause={() => setIsVideoPlaying(false)}
-                  className="w-full h-full object-contain bg-black"
                 />
               )}
 
@@ -401,13 +501,13 @@ export default function Courseware() {
               )}
 
               {currentPage.type === 'pixi_game' && (
-                 <div className="w-full h-full bg-gradient-to-t from-purple-950 to-slate-900 relative">
+                 <div className="w-full h-full bg-gradient-to-t from-sky-400 to-blue-200 relative">
                      <PixiInteractiveSlide />
-                     <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20 opacity-30 mix-blend-overlay">
-                         <h1 className="text-[10rem] font-black italic tracking-tighter text-white">TAP! TAP!</h1>
+                     <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20 opacity-20 mix-blend-overlay">
+                         <h1 className="text-[10rem] font-black italic tracking-tighter text-white">CATCH!</h1>
                      </div>
                      <div className="absolute top-12 left-0 w-full text-center z-20 pointer-events-none">
-                        <h2 className="text-4xl font-bold drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">{currentPage.content}</h2>
+                        <h2 className="text-4xl font-bold text-slate-800 drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]">{currentPage.content}</h2>
                      </div>
                  </div>
               )}
