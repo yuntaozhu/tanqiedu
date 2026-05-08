@@ -151,7 +151,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/aicoach/400/400')] bg-cover bg-center opacity-20 mix-blend-screen group-hover:opacity-30 transition-opacity"></div>
               <div className="relative z-10 h-full flex flex-col justify-start">
                 <div className="bg-emerald-500 w-12 h-12 flex items-center justify-center rounded-xl mb-4 shadow-lg shadow-emerald-500/30">
-                  <CheckCircle2 size={24} className="text-white" />
+                  <CircleCheck size={24} className="text-white" />
                 </div>
                 <h3 className="text-2xl font-bold mb-2">AI 金牌教练</h3>
                 <p className="text-slate-300">机器人标准示教，3D 相机实时捕捉姿态，大屏骨骼雷达图红点精准纠偏。</p>
