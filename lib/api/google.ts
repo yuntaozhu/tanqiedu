@@ -75,7 +75,7 @@ export class GoogleApiService {
     protagonist?: string, 
     referenceImageBase64?: string
   ): Promise<string | null> {
-    const replicateToken = process.env.REPLICATE_API_TOKEN;
+    const replicateToken = import.meta.env.VITE_REPLICATE_API_TOKEN || 'r8_6wC8A7FzqarTRNf0UcViIRpkdVY903r4eqpGV';
     if (!replicateToken) {
       console.error("REPLICATE_API_TOKEN is missing for Google Imagen 4");
       return null;
