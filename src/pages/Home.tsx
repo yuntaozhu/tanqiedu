@@ -1,7 +1,7 @@
 import { motion, Variants } from 'framer-motion';
 import { 
-  PlayCircle, Calendar, Eye, Layers, Bot, ActivitySquare, Printer, Camera, 
-  XCircle, CheckCircle2, ChevronRight, Box, Cpu, Sparkles, Rocket,
+  PlayCircle, Calendar, Eye, Layers, Bot, SquareActivity, Printer, Camera, 
+  CircleX, CircleCheck, ChevronRight, Box, Cpu, Sparkles, Rocket,
   Quote, Flag, Heart, ShieldCheck, Target
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -115,7 +115,7 @@ export default function Home() {
               <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/tpr/800/400')] bg-cover bg-center opacity-30 group-hover:opacity-40 transition-opacity mix-blend-luminosity"></div>
               <div className="relative z-10 h-full flex flex-col justify-end w-full md:w-2/3">
                 <div className="bg-blue-500 w-12 h-12 flex items-center justify-center rounded-xl mb-6 shadow-lg shadow-blue-500/30">
-                  <ActivitySquare size={24} className="text-white" />
+                  <SquareActivity size={24} className="text-white" />
                 </div>
                 <h3 className="text-3xl font-bold mb-3">沉浸式 TPR 语言启蒙</h3>
                 <p className="text-slate-300 text-lg">大屏播放场景，机器人同步发音并做手势。孩子跟着做动作，用肢体记忆激发大脑语言中枢。</p>
@@ -255,15 +255,15 @@ export default function Home() {
              <div className="text-slate-400 font-bold text-xl mb-8 border-b border-slate-100 pb-4">传统互动课堂</div>
              <ul className="space-y-8">
                <li className="flex gap-4 items-start">
-                 <XCircle className="text-red-500 shrink-0 mt-1" />
+                 <CircleX className="text-red-500 shrink-0 mt-1" />
                  <div><span className="font-bold text-slate-800 block mb-1">低头看屏交互</span>容易伤眼分心，局限于2D平面的被动接收。</div>
                </li>
                <li className="flex gap-4 items-start">
-                 <XCircle className="text-red-500 shrink-0 mt-1" />
+                 <CircleX className="text-red-500 shrink-0 mt-1" />
                  <div><span className="font-bold text-slate-800 block mb-1">“伪AI”逻辑</span>只能做到选项判断、点选读评，无法感知孩子的真实行为。</div>
                </li>
                <li className="flex gap-4 items-start">
-                 <XCircle className="text-red-500 shrink-0 mt-1" />
+                 <CircleX className="text-red-500 shrink-0 mt-1" />
                  <div><span className="font-bold text-slate-800 block mb-1">高度依赖名师</span>需要教师具备极强的肢体表现力才能活跃气氛，复制难度大。</div>
                </li>
              </ul>
@@ -278,15 +278,15 @@ export default function Home() {
              </div>
              <ul className="space-y-8 relative z-10">
                <li className="flex gap-4 items-start">
-                 <CheckCircle2 className="text-emerald-500 shrink-0 mt-1" strokeWidth={3} />
+                 <CircleCheck className="text-emerald-500 shrink-0 mt-1" strokeWidth={3} />
                  <div><span className="font-bold text-slate-900 block mb-1 text-lg">抬头真实交互</span>离开屏幕限制，与物理空间的机器人自然交流，保护视力。</div>
                </li>
                <li className="flex gap-4 items-start">
-                 <CheckCircle2 className="text-emerald-500 shrink-0 mt-1" strokeWidth={3} />
+                 <CircleCheck className="text-emerald-500 shrink-0 mt-1" strokeWidth={3} />
                  <div><span className="font-bold text-slate-900 block mb-1 text-lg">“感知型”真AI</span>能看懂孩子的物理动作，并立即给出物理反馈与情绪价值（如伸开双臂拥抱）。</div>
                </li>
                <li className="flex gap-4 items-start">
-                 <CheckCircle2 className="text-emerald-500 shrink-0 mt-1" strokeWidth={3} />
+                 <CircleCheck className="text-emerald-500 shrink-0 mt-1" strokeWidth={3} />
                  <div><span className="font-bold text-slate-900 block mb-1 text-lg">标准化大师级表现</span>系统一键触发机器人的情感级生动表现，完美赋能每一个新手老师。</div>
                </li>
              </ul>

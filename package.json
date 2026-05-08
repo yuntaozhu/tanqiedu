@@ -23,7 +23,7 @@
     "flv.js": "^1.6.2",
     "framer-motion": "^12.38.0",
     "lit": "^3.0.0",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "^0.460.0",
     "pixi.js": "^8.18.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

@@ -4,8 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import '../index.css';
 
-// Import the legacy lit app
-import './legacy/ToddlerDrawingDreamer';
+console.log('App starting...');
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

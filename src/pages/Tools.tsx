@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Printer, X, MonitorPlay, Blocks } from 'lucide-react';
 
+// Side-effect import for the legacy custom element
+import '../legacy/ToddlerDrawingDreamer';
+
 export default function Tools() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
 
