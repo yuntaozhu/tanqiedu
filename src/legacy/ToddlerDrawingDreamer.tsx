@@ -557,6 +557,13 @@ export class GdmLiveAudio extends LitElement {
     this.loadPersistence();
   }
 
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.stopRecording();
+    if (this.inputAudioContext.state !== 'closed') this.inputAudioContext.close().catch(() => {});
+    if (this.outputAudioContext.state !== 'closed') this.outputAudioContext.close().catch(() => {});
+  }
+
   private loadPersistence() {
     try {
       const current = localStorage.getItem('gdm_current_scroll');
@@ -883,6 +890,8 @@ export class GdmLiveAudio extends LitElement {
         1. 严禁用任何英文或拼音交流。
         2. 说话语气要像温柔的幼儿园老师。
         3. 严禁在给 generate_drawing 的指令中包含任何英文。
+        4. 当用户说"开始作画"、"帮我画一个"或表达出想看画的意思时，请结合之前的聊天内容，总结出一个丰富的黑白线条画视觉描述作为 prompt 调用 generate_drawing。
+        5. 对话中要引导孩子多描述细节，然后再开始作画。
         目前锁定的主角是：${this.protagonistDescription || '未定'}。`,
         tools: [{ functionDeclarations: [GENERATE_DRAWING_TOOL] }],
         callbacks: {
