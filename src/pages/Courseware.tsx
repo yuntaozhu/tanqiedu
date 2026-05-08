@@ -6,7 +6,7 @@ import {
   Home, X, RefreshCw, PowerOff, Power, Pause, Trash2, Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { Application, Graphics } from 'pixi.js';
 import flvjs from 'flv.js';
 
