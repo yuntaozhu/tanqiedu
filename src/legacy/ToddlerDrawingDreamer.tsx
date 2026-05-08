@@ -560,14 +560,33 @@ export class GdmLiveAudio extends LitElement {
   private loadPersistence() {
     try {
       const current = localStorage.getItem('gdm_current_scroll');
-      if (current) this.storyPanels = JSON.parse(current);
+      if (current && current.trim()) {
+        try {
+          this.storyPanels = JSON.parse(current);
+        } catch (e) {
+          console.error("Failed to parse storyPanels", e);
+          this.storyPanels = [];
+        }
+      }
+      
       const archives = localStorage.getItem('gdm_archived_scrolls');
-      if (archives) this.savedScrolls = JSON.parse(archives);
+      if (archives && archives.trim()) {
+        try {
+          this.savedScrolls = JSON.parse(archives);
+        } catch (e) {
+          console.error("Failed to parse savedScrolls", e);
+          this.savedScrolls = [];
+        }
+      }
+      
       const proto = localStorage.getItem('gdm_current_protagonist');
       if (proto) this.protagonistDescription = proto;
+      
       const anchor = localStorage.getItem('gdm_current_anchor');
       if (anchor) this.anchorImageBase64 = anchor;
-    } catch (e) {}
+    } catch (e) {
+      console.error("Persistence loading failed totally", e);
+    }
   }
 
   private savePersistence() {

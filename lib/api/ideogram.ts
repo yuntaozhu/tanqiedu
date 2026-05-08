@@ -14,7 +14,7 @@ export class IdeogramApiService {
     protagonist?: string, 
     referenceImageBase64?: string
   ): Promise<string | null> {
-    const apiKey = process.env.IDEOGRAM_API_KEY;
+    const apiKey = import.meta.env.VITE_IDEOGRAM_API_KEY || (process.env as any).IDEOGRAM_API_KEY;
     
     if (!apiKey) {
       console.error("Ideogram API Key is missing.");
