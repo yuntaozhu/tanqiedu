@@ -562,7 +562,11 @@ export class GdmLiveAudio extends LitElement {
       const current = localStorage.getItem('gdm_current_scroll');
       if (current && current.trim()) {
         try {
-          this.storyPanels = JSON.parse(current);
+          if (current.startsWith('[')) {
+            this.storyPanels = JSON.parse(current);
+          } else {
+            console.warn("localStorage 'gdm_current_scroll' is not a JSON array.");
+          }
         } catch (e) {
           console.error("Failed to parse storyPanels", e);
           this.storyPanels = [];
@@ -572,7 +576,11 @@ export class GdmLiveAudio extends LitElement {
       const archives = localStorage.getItem('gdm_archived_scrolls');
       if (archives && archives.trim()) {
         try {
-          this.savedScrolls = JSON.parse(archives);
+          if (archives.startsWith('[')) {
+            this.savedScrolls = JSON.parse(archives);
+          } else {
+            console.warn("localStorage 'gdm_archived_scrolls' is not a JSON array.");
+          }
         } catch (e) {
           console.error("Failed to parse savedScrolls", e);
           this.savedScrolls = [];
@@ -899,6 +907,13 @@ export class GdmLiveAudio extends LitElement {
           },
           onmessage: async (message: LiveServerMessage) => {
             if (this._currentSessionId !== mySessionId) return;
+            if (message.serverContent?.interrupted) {
+              // Clear upcoming audio queue on interruption
+              this.nextStartTime = this.outputAudioContext.currentTime;
+              this.outputNode.gain.cancelScheduledValues(this.nextStartTime);
+              // Note: We might want to stop currently playing source, but that's complex with the current buffer source strategy
+            }
+
             if (message.toolCall && message.toolCall.functionCalls) {
               for (const fc of message.toolCall.functionCalls) {
                 if (fc.name === 'generate_drawing') {
@@ -915,6 +930,15 @@ export class GdmLiveAudio extends LitElement {
                       const title = await this.summarizePrompt(prompt); 
                       this.storyPanels = [...this.storyPanels, { id: Date.now().toString(), url: processed, prompt, title, timestamp: Date.now() }];
                     }
+
+                    const session = await sessionPromise;
+                    session.sendToolResponse({
+                      functionResponses: [{
+                        name: fc.name,
+                        id: (fc as any).id, // Using 'id' as per skill example
+                        response: { result: "已完成绘图并添加到卷轴。" }
+                      }]
+                    });
                   } finally { this.isProcessingTool = false; }
                 }
               }
