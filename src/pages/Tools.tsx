@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Printer, X, MonitorPlay, Blocks } from 'lucide-react';
 
 // Side-effect import for the legacy custom element

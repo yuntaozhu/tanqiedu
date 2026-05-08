@@ -6,8 +6,6 @@ import {
   Home, X, RefreshCw, PowerOff, Power, Pause, Trash2, Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import * as FabricNamespace from 'fabric';
-const fabric = (FabricNamespace as any).fabric || (FabricNamespace as any).default || FabricNamespace;
 import { Application, Graphics } from 'pixi.js';
 import flvjs from 'flv.js';
 
@@ -225,7 +223,6 @@ export default function Courseware() {
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const drawModeRef = useRef(drawMode);
 
   const activeCourse = mockData.find(c => c.id === activeCourseId);
@@ -234,108 +231,11 @@ export default function Courseware() {
   // Update drawModeRef for callbacks
   useEffect(() => {
       drawModeRef.current = drawMode;
-      const canvas = fabricCanvasRef.current;
-      if (canvas) {
-          canvas.isDrawingMode = (drawMode === 'pen');
-          
-          if (drawMode === 'eraser') {
-              canvas.selection = false;
-              canvas.forEachObject(obj => obj.selectable = false);
-              canvas.defaultCursor = 'crosshair';
-          } else {
-              canvas.selection = false;
-              canvas.forEachObject(obj => obj.selectable = false);
-              canvas.defaultCursor = 'default';
-          }
-      }
   }, [drawMode]);
-
-  // --- Fabric.js Canvas Setup ---
-  useEffect(() => {
-    if (!activeCourseId) return;
-
-    const initFabric = () => {
-        const canvasEl = document.getElementById('fabric-canvas') as HTMLCanvasElement;
-        if (!canvasEl) return;
-
-        if (fabricCanvasRef.current) {
-            fabricCanvasRef.current.dispose();
-        }
-
-        const canvas = new fabric.Canvas(canvasEl, {
-            isDrawingMode: false,
-            backgroundColor: 'rgba(0,0,0,0)',
-            selection: false
-        });
-        
-        canvas.freeDrawingBrush.color = '#ef4444';
-        canvas.freeDrawingBrush.width = 5;
-        
-        // Handle Resize
-        const resizeObserver = new ResizeObserver((entries) => {
-            const currentCanvas = fabricCanvasRef.current;
-            if (!currentCanvas) return;
-            for (let entry of entries) {
-                try {
-                    currentCanvas.setWidth(entry.contentRect.width);
-                    currentCanvas.setHeight(entry.contentRect.height);
-                    currentCanvas.renderAll();
-                } catch (err) {
-                    console.error("Fabric resize error", err);
-                }
-            }
-        });
-        
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current);
-            // Initial set
-            canvas.setWidth(containerRef.current.clientWidth);
-            canvas.setHeight(containerRef.current.clientHeight);
-        }
-        
-        fabricCanvasRef.current = canvas;
-
-        // Custom Eraser implementation using Fabric Events
-        canvas.on('mouse:down', (options) => {
-            if (drawModeRef.current === 'eraser' && options.target) {
-                canvas.remove(options.target);
-            }
-        });
-
-        // Track pointer for thick eraser visual feedback (Optional enhancement)
-        canvas.on('mouse:move', (options) => {
-             if (drawModeRef.current === 'eraser' && options.e.buttons === 1) {
-                  // Drag eraser support
-                  const pointer = canvas.getPointer(options.e);
-                  const objects = canvas.getObjects();
-                  // Simple collision check for path bounding boxes
-                  const fPoint = new fabric.Point(pointer?.x || 0, pointer?.y || 0);
-                  for (let i = objects.length - 1; i >= 0; i--) {
-                       if (objects[i].containsPoint(fPoint)) {
-                           canvas.remove(objects[i]);
-                       }
-                  }
-             }
-        });
-
-        return () => {
-            resizeObserver.disconnect();
-            canvas.dispose();
-            fabricCanvasRef.current = null;
-        }
-    };
-    
-    // Give DOM a microsecond to mount the canvas element
-    const timeout = setTimeout(initFabric, 50);
-    return () => clearTimeout(timeout);
-  }, [activeCourseId, currentPageIdx]); // Reset canvas fully on slide change
 
 
   const clearCanvas = () => {
-    if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.clear();
-        fabricCanvasRef.current.setBackgroundColor('rgba(0,0,0,0)', fabricCanvasRef.current.renderAll.bind(fabricCanvasRef.current));
-    }
+    // Canvas functionality removed as fabric.js was disabled
   };
 
   // --- Actions ---
@@ -402,11 +302,6 @@ export default function Courseware() {
         {/* --- Display Area --- */}
         <div ref={containerRef} className="flex-1 relative overflow-hidden bg-black flex items-center justify-center">
           
-          {/* Fabric.js Canvas Overlay */}
-          <div className={`absolute inset-0 z-40 ${drawMode === 'none' ? 'pointer-events-none' : 'pointer-events-auto'}`}>
-              <canvas id="fabric-canvas" className="w-full h-full" />
-          </div>
-
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPage.id}
