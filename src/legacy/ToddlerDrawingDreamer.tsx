@@ -244,6 +244,30 @@ export class GdmLiveAudio extends LitElement {
       filter: contrast(1.1) grayscale(1);
     }
 
+    .loading-placeholder {
+      width: 100%;
+      aspect-ratio: 1/1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f1efeb;
+      color: #8B4513;
+      font-size: 1.4rem;
+      gap: 15px;
+    }
+
+    .loading-placeholder::before {
+      content: '✒️';
+      font-size: 3rem;
+      animation: write-pulse 1.5s infinite;
+    }
+
+    @keyframes write-pulse {
+      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+      50% { transform: translateY(-10px) rotate(-15deg); opacity: 1; }
+    }
+
     .panel-prompt {
       width: 100%;
       background: rgba(255, 255, 255, 0.5);
@@ -771,45 +795,58 @@ export class GdmLiveAudio extends LitElement {
     this.status = `正在挥毫：${prompt}...`;
     this.isProcessingTool = true;
 
+    const panelId = Date.now().toString();
+    // 1. Immediate UI Feedback: Add a "processing" panel to the scroll
+    this.storyPanels = [...this.storyPanels, { 
+      id: panelId, 
+      url: '', 
+      prompt, 
+      title: '正在构思...', 
+      timestamp: Date.now() 
+    }];
+
     try {
       if (this.seed === undefined) this.seed = Math.floor(Math.random() * 2147483647);
       
+      // Start translation and summarization in parallel
       const englishPromptPromise = this.translatePrompt(prompt);
-      
-      const protagonistPromise = (!this.protagonistDescription && this.storyPanels.length === 0) 
+      const titlePromise = this.summarizePrompt(prompt);
+      const protagonistPromise = (!this.protagonistDescription && this.storyPanels.length <= 1) 
           ? this.extractProtagonist(prompt) 
           : Promise.resolve(null);
-          
-      const titlePromise = this.summarizePrompt(prompt);
 
       const englishPrompt = await englishPromptPromise;
       
+      // Start image generation immediately after we have the translated prompt
+      const imageUrlPromise = this.callGenerateImage(englishPrompt, this.seed);
+      
+      // While image is generating, we can resolve other metadata
       const [newProtagonist, kidFriendlyTitle] = await Promise.all([protagonistPromise, titlePromise]);
       
       if (newProtagonist) {
           this.protagonistDescription = newProtagonist;
       }
       
-      const imageUrl = await this.callGenerateImage(englishPrompt, this.seed);
+      const imageUrl = await imageUrlPromise;
 
       if (imageUrl) {
         const processedImage = await processLineArtImage(imageUrl, 800);
-        if (!this.anchorImageBase64 && this.storyPanels.length === 0) {
+        if (!this.anchorImageBase64 && this.storyPanels.length <= 1) {
           this.anchorImageBase64 = processedImage;
         }
-        this.storyPanels = [...this.storyPanels, {
-          id: Date.now().toString(),
-          url: processedImage,
-          prompt, 
-          title: kidFriendlyTitle,
-          timestamp: Date.now()
-        }];
+        
+        // Update the existing panel instead of pushing a new one
+        this.storyPanels = this.storyPanels.map(p => 
+          p.id === panelId ? { ...p, url: processedImage, title: kidFriendlyTitle } : p
+        );
         this.status = '画成。';
+        this.savePersistence();
       } else {
         throw new Error('Image generation returned null from all engines');
       }
     } catch (err) {
       console.error(err);
+      this.storyPanels = this.storyPanels.filter(p => p.id !== panelId);
       this.status = '笔墨受阻，请稍后再试。';
     } finally { this.isProcessingTool = false; }
   }
@@ -928,27 +965,62 @@ export class GdmLiveAudio extends LitElement {
                 if (fc.name === 'generate_drawing') {
                   this.isProcessingTool = true;
                   const prompt = (fc.args as any).prompt;
+                  const panelId = Date.now().toString();
+                  
+                  // 1. Immediate UI Feedback: Add a "processing" panel to the scroll
+                  this.storyPanels = [...this.storyPanels, { 
+                    id: panelId, 
+                    url: '', // Empty URL indicates loading state in UI
+                    prompt, 
+                    title: '正在构思...', 
+                    timestamp: Date.now() 
+                  }];
                   this.status = `正在作画...`;
-                  try {
-                    const englishPrompt = await this.translatePrompt(prompt);
-                    const imageUrl = await this.callGenerateImage(englishPrompt, this.seed);
-                    
-                    if (imageUrl) {
-                      const processed = await processLineArtImage(imageUrl, 800);
-                      if (!this.anchorImageBase64) this.anchorImageBase64 = processed;
-                      const title = await this.summarizePrompt(prompt); 
-                      this.storyPanels = [...this.storyPanels, { id: Date.now().toString(), url: processed, prompt, title, timestamp: Date.now() }];
-                    }
 
-                    const session = await sessionPromise;
-                    session.sendToolResponse({
-                      functionResponses: [{
-                        name: fc.name,
-                        id: (fc as any).id, // Using 'id' as per skill example
-                        response: { result: "已完成绘图并添加到卷轴。" }
-                      }]
-                    });
-                  } finally { this.isProcessingTool = false; }
+                  // 2. Parallelize everything
+                  (async () => {
+                    try {
+                      // Start translation and summarization in parallel
+                      const translatePromise = this.translatePrompt(prompt);
+                      const titlePromise = this.summarizePrompt(prompt);
+                      
+                      const englishPrompt = await translatePromise;
+                      
+                      // Start generation as soon as we have the english prompt
+                      const imageUrl = await this.callGenerateImage(englishPrompt, this.seed);
+                      
+                      if (imageUrl) {
+                        const processed = await processLineArtImage(imageUrl, 800);
+                        if (!this.anchorImageBase64) this.anchorImageBase64 = processed;
+                        
+                        const title = await titlePromise;
+                        
+                        // Update the existing panel instead of pushing a new one
+                        this.storyPanels = this.storyPanels.map(p => 
+                          p.id === panelId ? { ...p, url: processed, title } : p
+                        );
+                        this.savePersistence();
+                      } else {
+                        // Handle failure: remove the placeholder or show error
+                        this.storyPanels = this.storyPanels.filter(p => p.id !== panelId);
+                        this.status = "画师探奇累了，请稍后再试。";
+                      }
+                      
+                      const session = await sessionPromise;
+                      session.sendToolResponse({
+                        functionResponses: [{
+                          name: fc.name,
+                          id: (fc as any).id,
+                          response: { result: "已完成绘图并添加到卷轴。" }
+                        }]
+                      });
+                    } catch (err) {
+                      console.error("Drawing tool execution error:", err);
+                      this.storyPanels = this.storyPanels.filter(p => p.id !== panelId);
+                    } finally {
+                      this.isProcessingTool = false;
+                    }
+                  })();
                 }
               }
             }
@@ -1071,7 +1143,9 @@ export class GdmLiveAudio extends LitElement {
           ${this.storyPanels.length === 0 ? html`<div style="margin: 120px 40px; color: #8B4513; text-align: center; font-size: 1.6rem; line-height: 2;">素轴一张待落墨。<br/>请语音或文字输入画题。</div>` : ''}
           ${this.storyPanels.map(panel => html`
             <div class="story-panel">
-              <img src="${panel.url}" />
+              ${panel.url ? html`<img src="${panel.url}" />` : html`
+                <div class="loading-placeholder">探奇正在挥毫落纸...</div>
+              `}
               <div class="panel-actions">
                 <button class="action-btn-circle" title="魔法闪光" @click="${() => this.handleSparkleRemix(panel)}">✨</button>
                 <button class="action-btn-circle" title="打印单张" @click="${() => this.printSinglePanel(panel)}">🖨️</button>
