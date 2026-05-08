@@ -52,6 +52,8 @@ export class GoogleApiService {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } },
           },
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
         },
         callbacks: {
           onopen: () => {

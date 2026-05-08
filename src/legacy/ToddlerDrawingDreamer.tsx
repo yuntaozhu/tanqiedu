@@ -919,6 +919,15 @@ export class GdmLiveAudio extends LitElement {
                 }
               }
             }
+            
+            // Transcription Support: update input box with user's words
+            const inputTranscript = (message as any).inputTranscription?.text || 
+                                     (message as any).inputAudioTranscription?.text ||
+                                     (message as any).serverContent?.inputTranscription?.text;
+            if (inputTranscript) {
+              this.textInputValue = inputTranscript;
+            }
+
             const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (audioData) {
               const buffer = await decodeAudioData(decode(audioData), this.outputAudioContext, 24000, 1);
