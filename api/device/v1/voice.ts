@@ -76,7 +76,7 @@ export default async function handler(req: any, res: any) {
     
     // 2. Gemini Call
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-preview',
+      model: 'gemini-3-flash-preview',
       contents: {
         role: 'user',
         parts: [{ inlineData: { mimeType: 'audio/wav', data: base64Audio } }]

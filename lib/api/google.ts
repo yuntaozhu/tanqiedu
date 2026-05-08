@@ -38,9 +38,9 @@ export class GoogleApiService {
     try {
       logger.info(`Initiating Gemini Live connection to model: ${config.model}`);
       
-      const timeoutMs = 15000;
+      const timeoutMs = 20000; // Increased to 20s
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(`连接超时`)), timeoutMs);
+        setTimeout(() => reject(new Error(`连接超时 (WebSocket timeout)`)), timeoutMs);
       });
 
       const connectPromise = ai.live.connect({
@@ -53,13 +53,28 @@ export class GoogleApiService {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Puck' } },
           },
         },
-        callbacks: config.callbacks
+        callbacks: {
+          onopen: () => {
+             logger.info("Gemini Live WebSocket opened successfully.");
+             config.callbacks.onopen();
+          },
+          onmessage: (msg) => config.callbacks.onmessage(msg),
+          onerror: (err) => {
+             logger.error("Gemini Live WebSocket Error (callback):", err);
+             config.callbacks.onerror(err);
+          },
+          onclose: (ev) => {
+             logger.warn("Gemini Live WebSocket Closed (callback):", ev);
+             config.callbacks.onclose(ev);
+          }
+        }
       });
 
       this.session = await Promise.race([connectPromise, timeoutPromise]);
+      logger.info("Gemini Live Session established.");
       return this.session;
     } catch (err) {
-      logger.error("Gemini Live Connection Failed:", err);
+      logger.error("Gemini Live Connection Failed (initialization):", err);
       this.session = null;
       throw err;
     }

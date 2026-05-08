@@ -870,7 +870,7 @@ export class GdmLiveAudio extends LitElement {
         this.isWorkletInitialized = true;
       }
       const sessionPromise = this.googleApi.connectLive({
-        model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+        model: 'gemini-3.1-flash-live-preview',
         systemInstruction: `你是绘画大师"探奇"。
         1. 严禁用任何英文或拼音交流。
         2. 说话语气要像温柔的幼儿园老师。
@@ -923,7 +923,15 @@ export class GdmLiveAudio extends LitElement {
               this.nextStartTime = Math.max(this.nextStartTime, this.outputAudioContext.currentTime) + buffer.duration;
             }
           },
-          onerror: () => this.stopRecording(), onclose: () => this.stopRecording()
+          onerror: (err) => {
+            console.error("Gemini Live API Error:", err);
+            this.status = '语音引擎故障，请重试。';
+            this.stopRecording();
+          }, 
+          onclose: (ev) => {
+            console.warn("Gemini Live Connection Closed:", ev);
+            this.stopRecording();
+          }
         }
       });
     } catch (e: any) {
