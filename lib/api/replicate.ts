@@ -5,7 +5,7 @@
  * and text via meta/meta-llama-3-8b-instruct.
  */
 export class ReplicateApiService {
-  private apiKey = import.meta.env.VITE_REPLICATE_API_TOKEN || (process.env as any).REPLICATE_API_TOKEN;
+  private apiKey = import.meta.env.VITE_REPLICATE_API_TOKEN || (typeof process !== 'undefined' ? process.env.REPLICATE_API_TOKEN : undefined);
   private baseUrl = '/replicate-proxy';
 
   /**

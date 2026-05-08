@@ -14,7 +14,7 @@ export class IdeogramApiService {
     protagonist?: string, 
     referenceImageBase64?: string
   ): Promise<string | null> {
-    const apiKey = import.meta.env.VITE_IDEOGRAM_API_KEY || (process.env as any).IDEOGRAM_API_KEY;
+    const apiKey = import.meta.env.VITE_IDEOGRAM_API_KEY || (typeof process !== 'undefined' ? process.env.IDEOGRAM_API_KEY : undefined);
     
     if (!apiKey) {
       console.error("Ideogram API Key is missing.");
@@ -90,7 +90,13 @@ export class IdeogramApiService {
         return null;
       }
 
-      const data = JSON.parse(responseText);
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Ideogram response is not valid JSON:", responseText);
+        return null;
+      }
       
       // Ideogram v3 response structure usually contains `data` array
       if (data && data.data && data.data.length > 0) {
