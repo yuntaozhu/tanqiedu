@@ -223,19 +223,105 @@ export default function Courseware() {
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const drawModeRef = useRef(drawMode);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
 
   const activeCourse = mockData.find(c => c.id === activeCourseId);
   const currentPage = activeCourse?.pages[currentPageIdx];
 
-  // Update drawModeRef for callbacks
+  // Initialize Canvas
   useEffect(() => {
-      drawModeRef.current = drawMode;
+    if (activeCourseId && canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#3b82f6'; // Default pen color
+        }
+
+        const handleResize = () => {
+            const container = containerRef.current;
+            if (canvas && container) {
+                const temp = ctx?.getImageData(0, 0, canvas.width, canvas.height);
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                if (temp && ctx) {
+                    ctx.putImageData(temp, 0, 0);
+                    // Re-set styles as they are lost on resize
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = drawMode === 'eraser' ? '#000000' : '#3b82f6';
+                }
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+        return () => window.removeEventListener('resize', handleResize);
+    }
+  }, [activeCourseId]);
+
+  // Update canvas state based on drawMode
+  useEffect(() => {
+    if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        if (ctx) {
+            if (drawMode === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = 20;
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#3b82f6';
+            }
+        }
+    }
   }, [drawMode]);
 
+  const startDrawing = (e: React.PointerEvent) => {
+    if (drawMode === 'none') return;
+    isDrawingRef.current = true;
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (rect) {
+        lastPosRef.current = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+  };
+
+  const draw = (e: React.PointerEvent) => {
+    if (!isDrawingRef.current || drawMode === 'none' || !canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+    const rect = canvasRef.current.getBoundingClientRect();
+    if (ctx && rect) {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        ctx.beginPath();
+        ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        
+        lastPosRef.current = { x, y };
+    }
+  };
+
+  const stopDrawing = () => {
+    isDrawingRef.current = false;
+  };
 
   const clearCanvas = () => {
-    // Canvas functionality removed as fabric.js was disabled
+    if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        if (ctx) {
+            ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }
+    }
   };
 
   // --- Actions ---
@@ -302,6 +388,16 @@ export default function Courseware() {
         {/* --- Display Area --- */}
         <div ref={containerRef} className="flex-1 relative overflow-hidden bg-black flex items-center justify-center">
           
+          {/* Drawing Canvas Overlay */}
+          <canvas
+            ref={canvasRef}
+            onPointerDown={startDrawing}
+            onPointerMove={draw}
+            onPointerUp={stopDrawing}
+            onPointerLeave={stopDrawing}
+            className={`absolute inset-0 z-40 touch-none ${drawMode === 'none' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'}`}
+          />
+
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPage.id}
