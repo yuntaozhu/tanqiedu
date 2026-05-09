@@ -41,8 +41,8 @@ export default function Home() {
             全新一代双师互动生态发布
           </motion.div>
           
-          <motion.h1 variants={fadeUpVariants} className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter text-white mb-6 leading-tight">
-            让知识，拥有真实的<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-300">身体</span>。
+          <motion.h1 variants={fadeUpVariants} className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter mb-8 leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-blue-200 whitespace-nowrap px-4">
+            让知识，拥有真实的身体。
           </motion.h1>
           
           <motion.p variants={fadeUpVariants} className="text-lg md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto font-light leading-relaxed">

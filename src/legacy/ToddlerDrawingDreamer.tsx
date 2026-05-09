@@ -5,7 +5,7 @@
  */
 
 import { LitElement, css, html, PropertyValues, nothing } from 'lit';
-import { customElement, state, query } from 'lit/decorators.js';
+import { state, query } from 'lit/decorators.js';
 import { createBlob, decode, decodeAudioData, processLineArtImage } from '../../utils';
 import { GoogleApiService, IdeogramApiService, ReplicateApiService } from '../../lib/api';
 import { LiveServerMessage, FunctionDeclaration, Type } from '@google/genai';
@@ -44,6 +44,7 @@ interface StoryPanel {
   prompt: string;
   title: string;
   timestamp: number;
+  userOverlay?: string; // Base64 transparent PNG of user doodle
 }
 
 interface SavedScroll {
@@ -82,7 +83,7 @@ class PCMProcessor extends AudioWorkletProcessor {
 registerProcessor('pcm-processor', PCMProcessor);
 `;
 
-@customElement('gdm-live-audio')
+// @customElement('gdm-live-audio')
 export class GdmLiveAudio extends LitElement {
   @state() isRecording = false;
   @state() status = '正在启动探奇系统...';
@@ -97,6 +98,80 @@ export class GdmLiveAudio extends LitElement {
   @state() showGallery = false;
   @state() protagonistDescription = ''; 
   @state() anchorImageBase64 = ''; 
+  @state() activeDrawingPanelId: string | null = null;
+  private isPainting = false;
+  private lastX = 0;
+  private lastY = 0;
+
+  private handleStartDrawing(panelId: string) {
+    if (this.activeDrawingPanelId === panelId) {
+      this.activeDrawingPanelId = null;
+      this.status = "已收起笔墨。";
+    } else {
+      this.activeDrawingPanelId = panelId;
+      this.status = "请挥毫落纸。";
+    }
+  }
+
+  private initCanvas(canvas: HTMLCanvasElement, panel: StoryPanel) {
+    const ctx = canvas.getContext('2d')!;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#000000';
+
+    // If there's an existing overlay, load it
+    if (panel.userOverlay) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.src = panel.userOverlay;
+    }
+  }
+
+  private onCanvasPointerDown(e: PointerEvent) {
+    const canvas = e.target as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    this.isPainting = true;
+    this.lastX = e.clientX - rect.left;
+    this.lastY = e.clientY - rect.top;
+    
+    const ctx = canvas.getContext('2d')!;
+    ctx.beginPath();
+    ctx.moveTo(this.lastX, this.lastY);
+  }
+
+  private onCanvasPointerMove(e: PointerEvent) {
+    if (!this.isPainting) return;
+    const canvas = e.target as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const ctx = canvas.getContext('2d')!;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    
+    this.lastX = x;
+    this.lastY = y;
+  }
+
+  private onCanvasPointerUp(e: PointerEvent) {
+    if (!this.isPainting) return;
+    this.isPainting = false;
+    this.saveCanvasDrawing(e.target as HTMLCanvasElement);
+  }
+
+  private saveCanvasDrawing(canvas: HTMLCanvasElement) {
+    const dataUrl = canvas.toDataURL();
+    this.storyPanels = this.storyPanels.map(p => 
+      p.id === this.activeDrawingPanelId ? { ...p, userOverlay: dataUrl } : p
+    );
+    this.savePersistence();
+  }
 
   private _currentSessionId = 0;
   private isSocketPoisoned = false;
@@ -279,6 +354,32 @@ export class GdmLiveAudio extends LitElement {
       font-weight: bold;
     }
 
+    .drawing-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      z-index: 30;
+      touch-action: none;
+    }
+
+    .drawing-overlay-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 22;
+    }
+
+    .action-btn-circle.active {
+      background: #8B0000;
+      color: white;
+    }
+
     .panel-actions {
       position: absolute;
       top: 15px;
@@ -286,7 +387,7 @@ export class GdmLiveAudio extends LitElement {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      z-index: 25;
+      z-index: 35;
     }
 
     .action-btn-circle {
@@ -588,6 +689,24 @@ export class GdmLiveAudio extends LitElement {
     if (this.outputAudioContext.state !== 'closed') this.outputAudioContext.close().catch(() => {});
   }
 
+  protected updated(changedProperties: PropertyValues) {
+    super.updated(changedProperties);
+    if (changedProperties.has('activeDrawingPanelId') && this.activeDrawingPanelId) {
+      const canvas = this.renderRoot.querySelector(`#canvas-${this.activeDrawingPanelId}`) as HTMLCanvasElement;
+      if (canvas) {
+        const panel = this.storyPanels.find(p => p.id === this.activeDrawingPanelId);
+        if (panel) this.initCanvas(canvas, panel);
+      }
+    }
+    if (changedProperties.has('storyPanels')) {
+      this.scrollToBottom();
+      this.savePersistence();
+    }
+    if (changedProperties.has('savedScrolls')) {
+      localStorage.setItem('gdm_archived_scrolls', JSON.stringify(this.savedScrolls));
+    }
+  }
+
   private loadPersistence() {
     try {
       const current = localStorage.getItem('gdm_current_scroll');
@@ -636,16 +755,6 @@ export class GdmLiveAudio extends LitElement {
     } catch (e) {}
   }
 
-  protected updated(changedProperties: PropertyValues) {
-    if (changedProperties.has('storyPanels')) {
-      this.scrollToBottom();
-      this.savePersistence();
-    }
-    if (changedProperties.has('savedScrolls')) {
-      localStorage.setItem('gdm_archived_scrolls', JSON.stringify(this.savedScrolls));
-    }
-  }
-
   private scrollToBottom() {
     if (this.scrollContainer) {
       setTimeout(() => {
@@ -673,7 +782,10 @@ export class GdmLiveAudio extends LitElement {
           </style>
         </head>
         <body>
-          <img src="${panel.url}" />
+          <div style="position: relative; width: 100%; max-width: 57mm;">
+            <img src="${panel.url}" style="width: 100%;" />
+            ${panel.userOverlay ? `<img src="${panel.userOverlay}" style="position: absolute; top:0; left:0; width:100%; height:100%;" />` : ''}
+          </div>
           <h1>${panel.title.replace(/[a-zA-Z]/g, '')}</h1>
           <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 500); }</script>
         </body>
@@ -1100,10 +1212,37 @@ export class GdmLiveAudio extends LitElement {
 
     try {
       const CANVAS_WIDTH = 800; const PADDING = 40; const TITLE_HEIGHT = 100;
-      const images: HTMLImageElement[] = await Promise.all(this.storyPanels.map(p => new Promise<HTMLImageElement>(res => { const img = new Image(); img.crossOrigin="Anonymous"; img.onload=()=>res(img); img.src=p.url; })));
-      const canvas = document.createElement('canvas'); canvas.width = CANVAS_WIDTH + PADDING*2; canvas.height = images.reduce((a, b) => a + (CANVAS_WIDTH/b.width*b.height) + TITLE_HEIGHT, 0) + PADDING*2;
-      const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#fdf5e6'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.strokeStyle = '#8B0000'; ctx.lineWidth = 15; ctx.strokeRect(7,7,canvas.width-14,canvas.height-14);
-      let y = PADDING; images.forEach((img, i) => { const h = CANVAS_WIDTH/img.width*img.height; ctx.drawImage(img, PADDING, y, CANVAS_WIDTH, h); y+=h; ctx.fillStyle = '#3e2723'; ctx.font = 'bold 42px STKaiti, Kaiti SC, 楷体'; ctx.textAlign='center'; ctx.fillText(this.storyPanels[i].title, canvas.width/2, y + 60); y+=TITLE_HEIGHT; });
+      const images: {img: HTMLImageElement, overlay?: HTMLImageElement}[] = await Promise.all(this.storyPanels.map(p => new Promise<{img: HTMLImageElement, overlay?: HTMLImageElement}>(async (res) => { 
+        const img = new Image(); img.crossOrigin="Anonymous"; 
+        img.onload = async () => {
+          if (p.userOverlay) {
+            const overlay = new Image(); overlay.crossOrigin="Anonymous";
+            overlay.onload = () => res({img, overlay});
+            overlay.src = p.userOverlay;
+          } else {
+            res({img});
+          }
+        }; 
+        img.src=p.url; 
+      })));
+      const canvas = document.createElement('canvas'); 
+      canvas.width = CANVAS_WIDTH + PADDING*2; 
+      canvas.height = images.reduce((a, b) => a + (CANVAS_WIDTH/b.img.width*b.img.height) + TITLE_HEIGHT, 0) + PADDING*2;
+      const ctx = canvas.getContext('2d')!; 
+      ctx.fillStyle = '#fdf5e6'; ctx.fillRect(0,0,canvas.width,canvas.height); 
+      ctx.strokeStyle = '#8B0000'; ctx.lineWidth = 15; ctx.strokeRect(7,7,canvas.width-14,canvas.height-14);
+      
+      let y = PADDING; 
+      images.forEach((pair, i) => { 
+        const h = CANVAS_WIDTH/pair.img.width*pair.img.height; 
+        ctx.drawImage(pair.img, PADDING, y, CANVAS_WIDTH, h); 
+        if (pair.overlay) ctx.drawImage(pair.overlay, PADDING, y, CANVAS_WIDTH, h);
+        
+        y+=h; 
+        ctx.fillStyle = '#3e2723'; ctx.font = 'bold 42px STKaiti, Kaiti SC, 楷体'; ctx.textAlign='center'; 
+        ctx.fillText(this.storyPanels[i].title, canvas.width/2, y + 60); 
+        y+=TITLE_HEIGHT; 
+      });
       const link = document.createElement('a'); link.download = `探奇画卷-${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); 
       this.status = '画卷已下载并存入画库。';
     } catch (e) { 
@@ -1142,11 +1281,25 @@ export class GdmLiveAudio extends LitElement {
         <div class="paper-strip">
           ${this.storyPanels.length === 0 ? html`<div style="margin: 120px 40px; color: #8B4513; text-align: center; font-size: 1.6rem; line-height: 2;">素轴一张待落墨。<br/>请语音或文字输入画题。</div>` : ''}
           ${this.storyPanels.map(panel => html`
-            <div class="story-panel">
-              ${panel.url ? html`<img src="${panel.url}" />` : html`
+            <div class="story-panel" id="panel-${panel.id}">
+              ${panel.url ? html`
+                <img src="${panel.url}" />
+                ${panel.userOverlay ? html`<img src="${panel.userOverlay}" class="drawing-overlay-img" />` : nothing}
+                ${this.activeDrawingPanelId === panel.id ? html`
+                  <canvas 
+                    id="canvas-${panel.id}" 
+                    class="drawing-canvas"
+                    @pointerdown="${this.onCanvasPointerDown}"
+                    @pointermove="${this.onCanvasPointerMove}"
+                    @pointerup="${this.onCanvasPointerUp}"
+                    @pointerleave="${this.onCanvasPointerUp}"
+                  ></canvas>
+                ` : nothing}
+              ` : html`
                 <div class="loading-placeholder">探奇正在挥毫落纸...</div>
               `}
               <div class="panel-actions">
+                <button class="action-btn-circle ${this.activeDrawingPanelId === panel.id ? 'active' : ''}" title="挥毫落纸" @click="${() => this.handleStartDrawing(panel.id)}">🖌️</button>
                 <button class="action-btn-circle" title="魔法闪光" @click="${() => this.handleSparkleRemix(panel)}">✨</button>
                 <button class="action-btn-circle" title="打印单张" @click="${() => this.printSinglePanel(panel)}">🖨️</button>
               </div>
@@ -1198,4 +1351,8 @@ export class GdmLiveAudio extends LitElement {
       <gdm-log-viewer></gdm-log-viewer>
     `;
   }
+}
+
+if (!customElements.get('gdm-live-audio')) {
+  customElements.define('gdm-live-audio', GdmLiveAudio);
 }
