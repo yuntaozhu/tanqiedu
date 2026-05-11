@@ -4,6 +4,8 @@ import { Box, Cpu, Sparkles, Rocket, Globe, Lightbulb, Users, Trophy, PlayCircle
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
+import { CourseIllustration } from '../components/CourseIllustration';
+
 function BlobImage({ baseName, alt, className }: { baseName: string, alt: string, className?: string }) {
   const exts = ['.png', '.jpeg', '.jpg', '.PNG', '.JPEG', '.JPG'];
   const [attempt, setAttempt] = useState(0);
@@ -270,13 +272,12 @@ export default function Products() {
                     className="h-full flex flex-col"
                   >
                     {/* Image Area */}
-                    <div className="relative w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden mb-8 shadow-inner bg-slate-100 group shrink-0">
-                      <BlobImage 
-                        baseName={activeProduct.image} 
-                        alt={isEnglish ? activeProduct.name.en : activeProduct.name.zh} 
+                    <div className="relative w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden mb-8 shadow-inner bg-slate-50 group shrink-0">
+                      <CourseIllustration 
+                        id={activeProduct.id}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
                       <div className="absolute bottom-6 left-6 right-6 text-white">
                         <div className={`inline-block px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-lg text-sm font-bold tracking-wide mb-3 shadow-sm uppercase`}>
                           {isEnglish ? '20 BLOCKS LESSONS + 16 SPATIAL LESSONS' : '20节 积木建构课 + 16节 空间思维课'}
