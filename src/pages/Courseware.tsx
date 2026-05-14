@@ -44,6 +44,54 @@ const mockData = [
       { id: "p11", type: "robot_chat", content: "点击麦克风，告诉小布米你想要什么画？" },
       { id: "p12", type: "robot_print", content: "生成完毕！正在打印中..." }
     ]
+  },
+  {
+    id: "c3",
+    title: "第三课：陪伴机器人",
+    pages: [
+      { 
+        id: "p3_1", type: "slide_split", mediaType: "image", 
+        title: "01 联系", 
+        content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/%E5%AF%BC%E5%85%A5%E5%9B%BE.png", 
+        text: "小朋友们，你们知道生活中有哪些机器人？\n\n它们可以帮助我们做些什么呢？\n\n你们想要一个机器人好朋友吗？\n\n今天让我们搭建一个机器人，让它陪着小朋友们一起度过愉快的时间，它叫做陪伴机器人，下面让我们一起搭建一个陪伴机器人吧！" 
+      },
+      { 
+        id: "p3_2", type: "slide_split", mediaType: "image", 
+        title: "02 找零件", 
+        content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/%E9%9B%B6%E4%BB%B6%E6%B8%85%E5%8D%95.png", 
+        text: "请小朋友根据清单要求，独立寻找对应零件，找齐之后小手放好坐端正。" 
+      },
+      { 
+        id: "p3_3", type: "slide_split", mediaType: "video", 
+        title: "03 跟随搭建：头部", 
+        content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/1.mp4", 
+        text: "陪伴机器人分为身体和头部两部分。首先让我们先来搭建头部，小朋友们看看用到了什么结构？" 
+      },
+      { 
+        id: "p3_4", type: "slide_split", mediaType: "video", 
+        title: "03 跟随搭建：身体", 
+        content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/2.mp4", 
+        text: "太棒了，头部完成了，接下来跟随我一起搭建陪伴机器人的身体部分吧！" 
+      },
+      {
+        id: "p3_5", type: "slide_split", mediaType: "image",
+        title: "04 延续",
+        content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/%E5%AF%BC%E5%85%A5%E5%9B%BE.png",
+        text: "陪伴机器人搭建完成了，接下来请小朋友们利用零件箱中剩余的零件改装一下你的作品吧，让陪伴机器人变得更漂亮。"
+      },
+      {
+        id: "p3_6", type: "slide_split", mediaType: "image",
+        title: "05 收零件",
+        content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/%E9%9B%B6%E4%BB%B6%E6%B8%85%E5%8D%95.png",
+        text: "今天的任务都完成啦，请小朋友送零件宝宝回家，请小朋友们轻轻地将作品拆掉，放回宝箱。"
+      },
+      {
+        id: "p3_7", type: "slide_split", mediaType: "image",
+        title: "06 反思",
+        content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/%E5%AF%BC%E5%85%A5%E5%9B%BE.png",
+        text: "1. 你搭建的作品是什么呢？\n\n2. 陪伴机器人是怎样行走的呢？\n\n3. 陪伴机器人是分为哪些部分？(头部、身体)"
+      }
+    ]
   }
 ];
 
@@ -198,12 +246,12 @@ const FlvVideoPlayer = ({ src, videoRef, onPlay, onPause }: any) => {
 };
 
 
-const playAudio = (text: string) => {
+const playAudio = (text: string, lang: string = 'zh-CN') => {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.85;
+        utterance.lang = lang;
+        utterance.rate = 1;
         window.speechSynthesis.speak(utterance);
     }
 };
@@ -504,6 +552,69 @@ export default function Courseware() {
                  </div>
               )}
 
+              {currentPage.type === 'slide_split' && (
+                 <div className="w-full h-full bg-slate-50 flex flex-col md:flex-row relative">
+                     {/* Media Area */}
+                     <motion.div 
+                         initial={{ x: -20, opacity: 0 }}
+                         animate={{ x: 0, opacity: 1 }}
+                         transition={{ duration: 0.6, ease: "easeOut" }}
+                         className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-900 flex items-center justify-center p-4 md:p-8 shrink-0 relative pointer-events-none"
+                     >
+                         {currentPage.mediaType === 'video' ? (
+                             <div className="w-full h-full pointer-events-auto shadow-2xl rounded-2xl overflow-hidden bg-black">
+                               <FlvVideoPlayer 
+                                   src={currentPage.content} 
+                                   videoRef={videoRef}
+                                   onPlay={() => setIsVideoPlaying(true)}
+                                   onPause={() => setIsVideoPlaying(false)}
+                               />
+                             </div>
+                         ) : (
+                             <img src={currentPage.content} alt="slide media" className="w-full h-full object-contain pointer-events-auto scale-95 hover:scale-100 transition-transform duration-500" draggable={false} />
+                         )}
+                     </motion.div>
+                     {/* Text Area */}
+                     <motion.div 
+                         initial={{ x: 20, opacity: 0 }}
+                         animate={{ x: 0, opacity: 1 }}
+                         transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+                         className="flex-1 p-8 md:p-16 flex flex-col justify-center relative z-50 pointer-events-auto bg-white border-l border-slate-200 shadow-2xl"
+                     >
+                         <motion.h1 
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.4 }}
+                            className="text-4xl md:text-5xl font-black text-blue-600 mb-8 tracking-tight"
+                         >
+                            {currentPage.title}
+                         </motion.h1>
+                         <motion.div 
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.5 }}
+                            className="text-2xl text-slate-700 leading-relaxed whitespace-pre-wrap font-medium"
+                         >
+                            {currentPage.text}
+                         </motion.div>
+                         <motion.div 
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.6 }}
+                            className="mt-12 flex"
+                         >
+                           <button 
+                               onClick={() => playAudio(currentPage.text || "", 'zh-CN')}
+                               className="flex items-center gap-3 bg-blue-100 hover:bg-blue-200 text-blue-700 px-6 py-3 rounded-full transition active:scale-95 border border-blue-200"
+                           >
+                               <Play size={20} className="fill-current" />
+                               <span className="font-bold text-lg">语音朗读</span>
+                           </button>
+                         </motion.div>
+                     </motion.div>
+                 </div>
+              )}
+              
               {currentPage.type === 'reward' && (
                  <div className="w-full h-full bg-gradient-to-br from-amber-500 to-orange-700 flex flex-col items-center justify-center relative overflow-hidden">
                      <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 15 }} className="bg-white/10 p-12 rounded-full backdrop-blur-md mb-8 border border-white/20 shadow-2xl">
@@ -543,8 +654,8 @@ export default function Courseware() {
 
            {/* Media Group */}
            <div className="flex items-center gap-1.5 border-r border-slate-700 pr-3 mr-3 shrink-0">
-             <ToolBtn icon={Play} label="视频播放" onClick={() => toggleVideoPlayback(true)} disabled={currentPage.type !== 'normal_video' || isVideoPlaying} />
-             <ToolBtn icon={Pause} label="视频暂停" onClick={() => toggleVideoPlayback(false)} disabled={currentPage.type !== 'normal_video' || !isVideoPlaying} />
+             <ToolBtn icon={Play} label="视频播放" onClick={() => toggleVideoPlayback(true)} disabled={(currentPage.type !== 'normal_video' && !(currentPage.type === 'slide_split' && currentPage.mediaType === 'video')) || isVideoPlaying} />
+             <ToolBtn icon={Pause} label="视频暂停" onClick={() => toggleVideoPlayback(false)} disabled={(currentPage.type !== 'normal_video' && !(currentPage.type === 'slide_split' && currentPage.mediaType === 'video')) || !isVideoPlaying} />
              <ToolBtn icon={RefreshCw} label="课件重置" onClick={reloadCurrentSlide} />
            </div>
 
