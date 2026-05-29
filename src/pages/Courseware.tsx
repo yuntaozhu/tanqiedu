@@ -8,6 +8,17 @@ import {
 import confetti from 'canvas-confetti';
 import { Application, Graphics } from 'pixi.js';
 import flvjs from 'flv.js';
+import { 
+  ColorIntroScene, LessonSelectorGrid, SubLessonSelector, 
+  ForestSearchGame, TreasureBoxGame, AnimalConnectGame, 
+  ShapeColoringGame, DoubleColorGame, SpaceStationDragGame, 
+  ColorSudokuGame 
+} from '../components/ColorKingdomGames';
+import {
+  ShapeIntroScene, ShapeLessonSelectorGrid, ShapeSubLessonSelector,
+  ShapeForestSearchGame, ShapeMagicChestGame, ShapeAnimalConnectGame,
+  ShapeColoringGame as ShapeColoringCanvas, ShapeBuildingBlocksGame, ShapeSudokuGame
+} from '../components/ShapeKingdomGames';
 
 // 1. Two-level Mock Data Structure (Phase 2 with 10 TPR Pages)
 const mockData = [
@@ -91,6 +102,39 @@ const mockData = [
         content: "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course1/%E5%AF%BC%E5%85%A5%E5%9B%BE.png",
         text: "1. 你搭建的作品是什么呢？\n\n2. 陪伴机器人是怎样行走的呢？\n\n3. 陪伴机器人是分为哪些部分？(头部、身体)"
       }
+    ]
+  },
+  {
+    id: "c4",
+    title: "第四课：辨色识趣 (颜色空间站)",
+    pages: [
+      { id: "p4_1", type: "color_intro" },
+      { id: "p4_2", type: "level_grid" },
+      { id: "p4_3", type: "track_selector" },
+      { id: "p4_4", type: "forest_search" },
+      { id: "p4_5", type: "treasure_chest" },
+      { id: "p4_6", type: "animal_connect" },
+      { id: "p4_7", type: "shape_coloring" },
+      { id: "p4_8", type: "double_color" },
+      { id: "p4_9", type: "space_station_drag" },
+      { id: "p4_10", type: "color_sudoku" },
+      { id: "p4_11", type: "reward", content: "颜色王国终极挑战达标！" }
+    ]
+  },
+  {
+    id: "c5",
+    title: "第五课：辨形知思 (几何形状宇宙)",
+    pages: [
+      { id: "p5_1", type: "shape_intro" },
+      { id: "p5_2", type: "shape_level_grid" },
+      { id: "p5_3", type: "shape_track_selector" },
+      { id: "p5_4", type: "shape_forest_search" },
+      { id: "p5_5", type: "shape_magic_chest" },
+      { id: "p5_6", type: "shape_animal_connect" },
+      { id: "p5_7", type: "shape_coloring_canvas" },
+      { id: "p5_8", type: "shape_building_blocks" },
+      { id: "p5_9", type: "shape_sudoku" },
+      { id: "p5_10", type: "reward", content: "形状王国终极挑战达标！" }
     ]
   }
 ];
@@ -275,8 +319,8 @@ export default function Courseware() {
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
 
-  const activeCourse = mockData.find(c => c.id === activeCourseId);
-  const currentPage = activeCourse?.pages[currentPageIdx];
+  const activeCourse = mockData.find(c => c.id === activeCourseId) as any;
+  const currentPage = activeCourse?.pages[currentPageIdx] as any;
 
   // Initialize Canvas
   useEffect(() => {
@@ -550,6 +594,115 @@ export default function Courseware() {
                         <h2 className="text-4xl font-bold text-slate-800 drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]">{currentPage.content}</h2>
                      </div>
                  </div>
+              )}
+
+              {currentPage.type === 'color_intro' && (
+                 <ColorIntroScene onComplete={() => setCurrentPageIdx(1)} />
+              )}
+
+              {currentPage.type === 'level_grid' && (
+                 <LessonSelectorGrid onSelectLesson={(num) => {
+                    if (num === '02') {
+                       setActiveCourseId('c5');
+                       setCurrentPageIdx(0);
+                    } else {
+                       setCurrentPageIdx(2);
+                    }
+                 }} />
+              )}
+
+              {currentPage.type === 'track_selector' && (
+                 <SubLessonSelector 
+                    onBack={() => setCurrentPageIdx(1)} 
+                    onSelectTrack={(track) => {
+                       if (track === 'camp') {
+                          setCurrentPageIdx(3);
+                       } else {
+                          setCurrentPageIdx(8);
+                       }
+                    }} 
+                 />
+              )}
+
+              {currentPage.type === 'forest_search' && (
+                 <ForestSearchGame />
+              )}
+
+              {currentPage.type === 'treasure_chest' && (
+                 <TreasureBoxGame />
+              )}
+
+              {currentPage.type === 'animal_connect' && (
+                 <AnimalConnectGame />
+              )}
+
+              {currentPage.type === 'shape_coloring' && (
+                 <ShapeColoringGame />
+              )}
+
+              {currentPage.type === 'double_color' && (
+                 <DoubleColorGame />
+              )}
+
+              {currentPage.type === 'space_station_drag' && (
+                 <SpaceStationDragGame />
+              )}
+
+              {currentPage.type === 'color_sudoku' && (
+                 <ColorSudokuGame />
+              )}
+
+              {/* LESSON 02 SHAPE WORLD INTERACTIVE PAGES */}
+              {currentPage.type === 'shape_intro' && (
+                 <ShapeIntroScene onComplete={() => setCurrentPageIdx(1)} />
+              )}
+
+              {currentPage.type === 'shape_level_grid' && (
+                 <ShapeLessonSelectorGrid onSelectLesson={(num) => {
+                    if (num === '01') {
+                       setActiveCourseId('c4');
+                       setCurrentPageIdx(0);
+                    } else {
+                       setCurrentPageIdx(2);
+                    }
+                 }} />
+              )}
+
+              {currentPage.type === 'shape_track_selector' && (
+                 <ShapeSubLessonSelector 
+                    onBack={() => setCurrentPageIdx(1)} 
+                    onSelectTrack={(track) => {
+                       if (track === 'camp') {
+                          setCurrentPageIdx(3);
+                       } else {
+                          setCurrentPageIdx(7);
+                       }
+                    }} 
+                 />
+              )}
+
+              {currentPage.type === 'shape_forest_search' && (
+                 <ShapeForestSearchGame />
+              )}
+
+              {currentPage.type === 'shape_magic_chest' && (
+                 <ShapeMagicChestGame />
+              )}
+
+              {currentPage.type === 'shape_animal_connect' && (
+                 <ShapeAnimalConnectGame />
+              )}
+
+              {currentPage.type === 'shape_coloring_canvas' && (
+                 <ShapeColoringCanvas />
+              )}
+
+              {currentPage.type === 'shape_building_blocks' && (
+                 <ShapeBuildingBlocksGame />
+              )}
+
+              {currentPage.type === 'shape_sudoku' && (
+                 <ShapeSudokuGame />
               )}
 
               {currentPage.type === 'slide_split' && (
