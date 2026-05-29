@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Play, Sparkles, AlertCircle, CheckCircle2, 
   HelpCircle, RefreshCw, Trophy, Heart, ArrowRight, ArrowLeft
@@ -249,100 +249,70 @@ export function SubLessonSelector({ onSelectTrack, onBack }: { onSelectTrack: (t
 // 4. ANIMALS SHADOW/FOREST SEARCH GAME
 // ==========================================
 export function ForestSearchGame() {
-  const [revealed, setRevealed] = useState<Record<number, boolean>>({});
   const [complete, setComplete] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const animals = [
-    { id: 1, name: '小章鱼', sound: '嗨，我是喜欢蓝色的小章鱼！', emoji: '🐙', bg: 'bg-sky-100 text-sky-600 border-sky-300' },
-    { id: 2, name: '长颈鹿', sound: '你好，我是喜欢黄色的大长颈鹿！', emoji: '🦒', bg: 'bg-amber-100 text-amber-600 border-amber-300' },
-    { id: 3, name: '小粉猪', sound: '哼哼，我是爱红色的小粉猪！', emoji: '🐷', bg: 'bg-rose-100 text-rose-600 border-rose-300' },
-    { id: 4, name: '小松鼠', sound: '你好呀，我是小松鼠宝宝！', emoji: '🐿️', bg: 'bg-orange-100 text-orange-600 border-orange-300' },
-    { id: 5, name: '小袋鼠', sound: '跳跳跳，我是小袋鼠！', emoji: '🦘', bg: 'bg-yellow-105 text-yellow-600 border-yellow-300' },
-  ];
+  const handlePlay = () => {
+    setIsPlaying(true);
+    speakText("开始播放精彩动画视频！");
+  };
 
-  const handleReveal = (index: number) => {
-    if (revealed[index]) return;
-    playSynthSound('popup');
-    const update = { ...revealed, [index]: true };
-    setRevealed(update);
-    speakText(animals[index].sound);
-
-    if (Object.keys(update).length === animals.length) {
-      setTimeout(() => {
-        setComplete(true);
-        playSynthSound('success');
-        confetti({ particleCount: 60, spread: 40 });
-      }, 1000);
-    }
+  const handleEnded = () => {
+    setComplete(true);
+    playSynthSound('success');
+    confetti({ particleCount: 60, spread: 40 });
+    speakText("太棒了！动画观看完毕，我们准备好进入颜色王国了吗？");
   };
 
   return (
-    <div className="w-full h-full bg-sky-950/20 relative flex flex-col md:flex-row relative">
-      {/* Visual illustration of the forest background */}
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-900 overflow-hidden relative p-8 flex items-center justify-center">
-        {/* Sky gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-450 via-sky-200 to-emerald-300" />
-        
-        {/* Interactive trees */}
-        <div className="absolute inset-0 p-8 grid grid-cols-5 gap-4 items-end">
-          {animals.map((anim, idx) => (
-            <div key={anim.id} className="h-full flex flex-col justify-end items-center relative gap-4">
-              
-              <AnimatePresence>
-                {revealed[idx] && (
-                  <motion.div 
-                    initial={{ y: 50, opacity: 0, scale: 0.5 }}
-                    animate={{ y: -30, opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ type: 'spring', damping: 10 }}
-                    className={`absolute z-20 p-4 rounded-3xl border shadow-xl flex flex-col items-center justify-center ${anim.bg}`}
-                  >
-                    <span className="text-4xl mb-1">{anim.emoji}</span>
-                    <span className="font-extrabold text-sm">{anim.name}</span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              
-              {/* Simple stylized SVG outline of tree */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={() => handleReveal(idx)}
-                className={`relative z-10 w-full aspect-[2/3] max-w-[80px] focus:outline-none transition-opacity duration-300
-                  ${revealed[idx] ? 'opacity-80' : 'opacity-100'}
-                `}
+    <div className="w-full h-full bg-sky-950/20 relative flex flex-col md:flex-row">
+      {/* Video Content Panel */}
+      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-950 overflow-hidden relative p-4 md:p-8 flex items-center justify-center">
+        <div className="relative w-full h-full max-h-[85vh] flex items-center justify-center rounded-2xl overflow-hidden bg-black/90 shadow-2xl border border-slate-800">
+          <video
+            className="w-full h-full object-contain"
+            src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P6%E8%B6%A3%E5%91%B3%E5%AF%BC%E5%85%A5%E8%A7%86%E9%A2%91.mp4"
+            controls
+            autoPlay
+            onPlay={handlePlay}
+            onEnded={handleEnded}
+          />
+          
+          {!isPlaying && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-xs pointer-events-none">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-20 h-20 bg-cyan-500 rounded-full flex items-center justify-center text-white text-3xl shadow-lg border border-cyan-300"
               >
-                <svg className="w-full h-full text-emerald-800 filter drop-shadow-md" viewBox="0 0 100 150" fill="currentColor">
-                  {/* Leaves */}
-                  <path d="M50 10 Q80 50 60 70 Q90 90 50 120 Q10 90 40 70 Q20 50 50 10 Z" />
-                  {/* Trunk */}
-                  <rect x="42" y="110" width="16" height="30" fill="#78350f" />
-                </svg>
-              </motion.button>
+                ▶
+              </motion.div>
+              <span className="text-white font-extrabold mt-4 text-lg drop-shadow-md">点击播放动画</span>
             </div>
-          ))}
+          )}
         </div>
       </div>
       
       {/* Side Content Panel */}
       <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white border-l border-slate-200 shadow-2xl relative">
         <span className="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-bold w-max mb-3">趣味导入</span>
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-6 font-sans">寻找森林小宾客</h1>
+        <h1 className="text-4xl font-extrabold text-slate-800 mb-6 font-sans">颜色王国趣味导入</h1>
         <p className="text-xl text-slate-600 leading-relaxed font-sans mb-8">
-          小朋友，森林里躲着几位颜色王国的小客人，他们要跟我们做游戏，快快点击大树把他们请出来吧！
+          小朋友，颜色王国准备了一个非常有趣的动画视频！快点击左侧的播放按钮，跟着动画里的小朋友，一起来认识神奇的颜色和小伙伴吧！
         </p>
         
         {complete ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
             <CheckCircle2 className="text-emerald-500 w-8 h-8" />
             <div>
-              <h4 className="font-extrabold text-emerald-800">全部找到了！</h4>
-              <p className="text-emerald-600 text-sm">小章鱼、长颈鹿、小胖猪都来做游戏咯！</p>
+              <h4 className="font-extrabold text-emerald-800">精彩动画观看完毕！</h4>
+              <p className="text-emerald-600 text-sm">小客人都在里面等着我们做游戏咯，快快开始挑战吧！</p>
             </div>
           </div>
         ) : (
           <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-700 text-sm font-bold flex items-center gap-3 animate-pulse">
             <HelpCircle className="w-6 h-6 shrink-0" />
-            <div>点击森林中的大树，看看谁藏在后面！</div>
+            <div>点击播放并观看完左侧动画视频，开启您的颜色探秘之旅！</div>
           </div>
         )}
       </div>
