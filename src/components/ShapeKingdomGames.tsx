@@ -414,7 +414,7 @@ export function ShapeForestSearchGame() {
                     className="px-6 py-2.5 bg-white text-indigo-700 rounded-full font-black text-sm hover:bg-slate-100 shadow-md transition active:scale-95 flex items-center gap-1.5"
                   >
                     <RefreshCw size={14} className="stroke-[3]" />
-                    再玩一次
+                    再次体验 🔄
                   </button>
                 </div>
               </motion.div>
@@ -592,9 +592,9 @@ export function ShapeMagicChestGame() {
                   setStats({ correct: 0, total: 0 });
                   speakText("形状分拣魔法箱来啦！请看箱子冒出来的是什么物品，把它送入对应的形状传送门里面吧！");
                 }}
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-full font-black text-xs transition flex items-center gap-1"
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-full font-black text-xs transition flex items-center gap-1.5"
               >
-                <RefreshCw size={12} className="stroke-[3]" /> 再试一遍
+                <RefreshCw size={12} className="stroke-[3]" /> 再次体验 🔄
               </button>
             </motion.div>
           )}
@@ -846,7 +846,7 @@ export function ShapeAnimalConnectGame() {
                   }}
                   className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-full text-xs font-black transition flex items-center gap-1.5"
                 >
-                  <RefreshCw size={12} className="stroke-[3]" /> 重新挑战
+                  <RefreshCw size={12} className="stroke-[3]" /> 再次体验 🔄
                 </button>
               </div>
             </motion.div>
@@ -1001,9 +1001,9 @@ export function ShapeColoringGame() {
                     setComplete(false);
                     speakText("魔法填色重置！选一把形状画笔，给匹配的轮廓注入色彩吧！");
                   }}
-                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-full text-xs font-black transition"
+                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-full text-xs font-black transition flex items-center gap-1"
                 >
-                  清空白板
+                  <RefreshCw size={12} className="stroke-[3]" /> 再次体验 🔄
                 </button>
               </motion.div>
             )}
@@ -1278,9 +1278,9 @@ export function ShapeBuildingBlocksGame() {
                     setComplete(false);
                     speakText(`太空建筑大拼搭重置！大家一起来重新拼装【${currentBp.title}】吧！`);
                   }}
-                  className="px-5 py-2 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-full text-xs font-black transition cursor-pointer"
+                  className="px-5 py-2 hover:bg-slate-800 text-slate-300 border border-slate-700 rounded-full text-xs font-black transition cursor-pointer flex items-center gap-1"
                 >
-                  重拆零件
+                  <RefreshCw size={12} className="stroke-[3]" /> 再次体验 🔄
                 </button>
               </div>
             </motion.div>
@@ -1597,7 +1597,7 @@ export function ShapeSudokuGame() {
                 }}
                 className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-xs shadow-md transition flex items-center gap-1.5"
               >
-                <RefreshCw size={12} className="stroke-[3]" /> 再刷一次
+                <RefreshCw size={12} className="stroke-[3]" /> 再次体验 🔄
               </button>
             </motion.div>
           )}

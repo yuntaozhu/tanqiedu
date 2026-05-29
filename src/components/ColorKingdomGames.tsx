@@ -251,6 +251,7 @@ export function SubLessonSelector({ onSelectTrack, onBack }: { onSelectTrack: (t
 export function ForestSearchGame() {
   const [complete, setComplete] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [videoKey, setVideoKey] = useState(0);
 
   const handlePlay = () => {
     setIsPlaying(true);
@@ -264,12 +265,20 @@ export function ForestSearchGame() {
     speakText("太棒了！动画观看完毕，我们准备好进入颜色王国了吗？");
   };
 
+  const handleReset = () => {
+    setComplete(false);
+    setIsPlaying(false);
+    setVideoKey(prev => prev + 1);
+    speakText("再次体验，视频重新开始啦！");
+  };
+
   return (
     <div className="w-full h-full bg-sky-950/20 relative flex flex-col md:flex-row">
       {/* Video Content Panel */}
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-950 overflow-hidden relative p-4 md:p-8 flex items-center justify-center">
+      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-950 overflow-hidden relative p-4 md:p-6 flex items-center justify-center">
         <div className="relative w-full h-full max-h-[85vh] flex items-center justify-center rounded-2xl overflow-hidden bg-black/90 shadow-2xl border border-slate-800">
           <video
+            key={videoKey}
             className="w-full h-full object-contain"
             src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P6%E8%B6%A3%E5%91%B3%E5%AF%BC%E5%85%A5%E8%A7%86%E9%A2%91.mp4"
             controls
@@ -294,27 +303,36 @@ export function ForestSearchGame() {
       </div>
       
       {/* Side Content Panel */}
-      <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white border-l border-slate-200 shadow-2xl relative">
+      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-2xl relative">
         <span className="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-bold w-max mb-3">趣味导入</span>
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-6 font-sans">颜色王国趣味导入</h1>
-        <p className="text-xl text-slate-600 leading-relaxed font-sans mb-8">
+        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 font-sans leading-tight">颜色王国趣味导入</h1>
+        <p className="text-base text-slate-600 leading-relaxed font-sans mb-6">
           小朋友，颜色王国准备了一个非常有趣的动画视频！快点击左侧的播放按钮，跟着动画里的小朋友，一起来认识神奇的颜色和小伙伴吧！
         </p>
         
         {complete ? (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <CheckCircle2 className="text-emerald-500 w-8 h-8" />
-            <div>
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col gap-2 shadow-sm">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="text-emerald-500 w-6 h-6 shrink-0" />
               <h4 className="font-extrabold text-emerald-800">精彩动画观看完毕！</h4>
-              <p className="text-emerald-600 text-sm">小客人都在里面等着我们做游戏咯，快快开始挑战吧！</p>
             </div>
+            <p className="text-emerald-600 text-xs">小客人都在里面等着我们做游戏咯，快快开始挑战吧！</p>
           </div>
         ) : (
-          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-700 text-sm font-bold flex items-center gap-3 animate-pulse">
-            <HelpCircle className="w-6 h-6 shrink-0" />
+          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-700 text-xs font-bold flex items-center gap-3 animate-pulse">
+            <HelpCircle className="w-5 h-5 shrink-0" />
             <div>点击播放并观看完左侧动画视频，开启您的颜色探秘之旅！</div>
           </div>
         )}
+
+        {/* 再次体验 Replay Button */}
+        <button
+          onClick={handleReset}
+          className="mt-6 w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
+        >
+          <RefreshCw size={14} className="animate-spin-slow" />
+          再次体验 🔄
+        </button>
       </div>
     </div>
   );
@@ -382,11 +400,18 @@ export function TreasureBoxGame() {
     }
   };
 
+  const handleReset = () => {
+    setActiveItem(null);
+    setDroppedGrids({ red: [], yellow: [], blue: [] });
+    setComplete(false);
+    speakText("宝箱已重新上锁，再次体验神秘的寻宝探险吧！");
+  };
+
   return (
     <div className="w-full h-full bg-slate-900/5 select-none flex flex-col md:flex-row relative">
       
       {/* Game board */}
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-900 border-b md:border-b-0 md:border-r border-slate-700/60 flex flex-col p-6 text-white justify-between relative">
+      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-900 border-b md:border-b-0 md:border-r border-slate-700/60 flex flex-col p-6 text-white justify-between relative">
         <div className="absolute inset-0 bg-gradient-to-tr from-indigo-950 to-slate-950 opacity-40 pointer-events-none" />
         
         {/* Columns Grid */}
@@ -487,34 +512,43 @@ export function TreasureBoxGame() {
       </div>
 
       {/* Intro Panel sidebar */}
-      <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white">
+      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
         <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-xs font-bold w-max mb-3">实操交互</span>
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-6 leading-tight">魔法宝箱寻宝格</h1>
-        <p className="text-xl text-slate-600 leading-relaxed mb-8">
+        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 leading-tight">魔法宝箱寻宝格</h1>
+        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
           点击魔法底下的宝箱，召唤颜色王国的宝贝！然后把召唤出来的宝贝通过<b>点击</b>或拖手入库对应的<b>红、黄、蓝</b>收集框中吧！
         </p>
 
         {complete ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 shadow-sm">
-            <Sparkles className="text-emerald-500 animate-spin w-8 h-8" />
+            <Sparkles className="text-emerald-500 animate-spin w-8 h-8 shrink-0" />
             <div>
               <h4 className="font-extrabold text-emerald-800">完美收箱！</h4>
-              <p className="text-emerald-600 text-sm">你分拣了所有的颜色宝物，长颈鹿和小橘猪开心得跳起舞来啦！</p>
+              <p className="text-emerald-600 text-xs">你分拣了所有的颜色宝物，长颈鹿和小橘猪开心得跳起舞来啦！</p>
             </div>
           </div>
         ) : activeItem ? (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-2 text-amber-700 text-sm font-bold">
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-2 text-amber-700 text-xs font-bold">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <span>点击对应的 红色、黄色、蓝色 收集格来进行分拣归类吧！</span>
           </div>
         ) : (
           <button 
             onClick={handleOpenChest}
-            className="w-full py-4 bg-orange-500 text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg"
+            className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 shadow-lg transition active:scale-95 text-base"
           >
             开启宝藏 🎁
           </button>
         )}
+
+        {/* Replay/Reset control */}
+        <button
+          onClick={handleReset}
+          className="mt-6 w-full py-3 bg-violet-600 hover:bg-violet-500 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
+        >
+          <RefreshCw size={14} className="animate-spin-slow" />
+          再次体验 🔄
+        </button>
       </div>
     </div>
   );
@@ -562,11 +596,18 @@ export function AnimalConnectGame() {
     }
   };
 
+  const handleReset = () => {
+    setSelectedAnimal(null);
+    setConnections({});
+    setComplete(false);
+    speakText("彩线已收回，小动物们都在等你的再次体验派对哦！");
+  };
+
   return (
     <div className="w-full h-full bg-slate-900/5 flex flex-col md:flex-row relative select-none">
       
       {/* Board Display */}
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-950 p-6 flex flex-col justify-center items-center relative">
+      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-950 p-6 flex flex-col justify-center items-center relative">
         <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-8 relative flex shadow-2xl justify-between items-center z-10 gap-8">
           
           {/* Animals Column */}
@@ -641,31 +682,40 @@ export function AnimalConnectGame() {
       </div>
 
       {/* Side Content Panel */}
-      <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white shadow-xl relative">
+      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
         <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold w-max mb-3">智慧闯关 1</span>
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-6">小伙伴爱上颜色</h1>
-        <p className="text-xl text-slate-600 leading-relaxed mb-8">
+        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 leading-tight">小伙伴爱上颜色</h1>
+        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
           小朋友，动动你的手指，帮帮小动物们找到他们最心爱的颜色吧！<br />
           先<b>选择左边的一只小动物</b>，然后<b>选择右边匹配的颜色彩墨</b>吧。
         </p>
 
         {complete ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <Trophy className="text-yellow-500 w-8 h-8 animate-bounce" />
+            <Trophy className="text-yellow-500 w-8 h-8 animate-bounce shrink-0" />
             <div>
               <h4 className="font-extrabold text-emerald-800">全部连接成功！</h4>
-              <p className="text-emerald-600 text-sm">小章鱼配蓝色、长颈鹿配黄色、小粉猪配红色！</p>
+              <p className="text-emerald-600 text-xs">小章鱼配蓝色、长颈鹿配黄色、小粉猪配红色！</p>
             </div>
           </div>
         ) : selectedAnimal ? (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-blue-700 text-sm font-bold animate-pulse">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-blue-700 text-xs font-bold animate-pulse">
             目标：请在右边点击连接的颜色彩墨！
           </div>
         ) : (
-          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 text-sm font-bold">
+          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 text-xs font-bold">
             连线步骤：先选择左边一个小动物吧。
           </div>
         )}
+
+        {/* 再次体验 Replay Button */}
+        <button
+          onClick={handleReset}
+          className="mt-6 w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
+        >
+          <RefreshCw size={14} className="animate-spin-slow" />
+          再次体验 🔄
+        </button>
       </div>
     </div>
   );
@@ -711,11 +761,18 @@ export function ShapeColoringGame() {
     }
   };
 
+  const handleReset = () => {
+    setSelectedBrush(null);
+    setColoredShapes({});
+    setComplete(false);
+    speakText("调色盘清空啦，再次体验涂色魔法吧！");
+  };
+
   return (
     <div className="w-full h-full bg-slate-900/5 select-none flex flex-col md:flex-row relative">
       
       {/* Visual Canvas Panel */}
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-900 flex flex-col p-6 text-white justify-between relative">
+      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-900 flex flex-col p-6 text-white justify-between relative">
         <div className="absolute inset-0 bg-radial-gradient from-slate-900 to-indigo-950 opacity-50 pointer-events-none" />
         
         {/* Paint Brushes */}
@@ -767,31 +824,40 @@ export function ShapeColoringGame() {
       </div>
 
       {/* Narrative Side block */}
-      <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white">
+      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
         <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold w-max mb-3">智慧闯关 2</span>
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-6 font-sans">七彩轮廓涂色卡</h1>
-        <p className="text-xl text-slate-600 leading-relaxed mb-8">
+        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 font-sans">七彩轮廓涂色卡</h1>
+        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
           画刷能给黑白的赛车、飞机和房屋注入生命力。
           请<b>选择一款彩色画刷</b>，然后<b>点击对应的黑白物体轮廓</b>为其着色匹配。
         </p>
 
         {complete ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <Heart className="text-red-500 w-8 h-8 fill-current" />
+            <Heart className="text-red-500 w-8 h-8 fill-current shrink-0" />
             <div>
               <h4 className="font-extrabold text-emerald-800">着色大功告成！</h4>
-              <p className="text-emerald-600 text-sm">红色的玩具赛车、黄色的飞机和蓝色的房子真漂亮！</p>
+              <p className="text-emerald-600 text-xs">红色的玩具赛车、黄色的飞机和蓝色的房子真漂亮！</p>
             </div>
           </div>
         ) : selectedBrush ? (
-          <div className="p-4 bg-teal-50 border border-teal-200 text-teal-700 text-sm font-bold animate-pulse">
+          <div className="p-4 bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold animate-pulse">
             画笔已就绪：点击中间的黑白结构填图吧！
           </div>
         ) : (
-          <div className="p-4 bg-slate-100 border border-slate-200 text-slate-600 text-sm font-bold">
+          <div className="p-4 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold">
             第一步：请先在上方任选一款精美的彩色画刷！
           </div>
         )}
+
+        {/* 再次体验 Replay Button */}
+        <button
+          onClick={handleReset}
+          className="mt-6 w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
+        >
+          <RefreshCw size={14} className="animate-spin-slow" />
+          再次体验 🔄
+        </button>
       </div>
     </div>
   );
@@ -839,9 +905,16 @@ export function DoubleColorGame() {
     }
   };
 
+  const handleReset = () => {
+    setSelectedId(null);
+    setCorrectFlags({});
+    setComplete(false);
+    speakText("双色泡泡积木板重置成功，再次体验拼拼乐吧！");
+  };
+
   return (
     <div className="w-full h-full bg-slate-900/5 select-none flex flex-col md:flex-row relative">
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-950 flex p-6 items-center justify-center relative">
+      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-950 flex p-6 items-center justify-center relative">
         <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-8 flex justify-between shadow-2xl relative z-10 gap-10 items-stretch">
           
           {/* Left Column - Double colors bubble */}
@@ -912,30 +985,39 @@ export function DoubleColorGame() {
       </div>
 
       {/* Narration Sidebar */}
-      <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white shadow-xl relative">
+      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
         <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold w-max mb-3">智慧闯关 3</span>
-        <h1 className="text-4xl font-extrabold text-slate-800 mb-6">双色积木对对碰</h1>
-        <p className="text-xl text-slate-600 leading-relaxed mb-8">
+        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 leading-tight">双色积木对对碰</h1>
+        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
           摆一摆，连一连。对照左边积木板的图案配色，把左右两半部分的颜色组合相同的连线相连配对！
         </p>
 
         {complete ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <CheckCircle2 className="text-emerald-500 w-8 h-8" />
+            <CheckCircle2 className="text-emerald-500 w-8 h-8 shrink-0" />
             <div>
               <h4 className="font-extrabold text-emerald-800">通过成功！</h4>
-              <p className="text-emerald-600 text-sm">你的积木结构观察力和小布米一样优秀啦！</p>
+              <p className="text-emerald-600 text-xs">你的积木结构观察力和小布米一样优秀啦！</p>
             </div>
           </div>
         ) : selectedId ? (
-          <div className="p-4 bg-blue-50 border border-blue-200 text-blue-700 text-sm font-bold animate-pulse">
+          <div className="p-4 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold animate-pulse">
             目标：请点击右边对应颜色拼接组合的积木模板！
           </div>
         ) : (
-          <div className="p-4 bg-slate-100 border border-slate-200 text-slate-600 text-sm font-bold">
+          <div className="p-4 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold">
             步骤：先从左边的双色泡泡彩珠堆里选一串吧！
           </div>
         )}
+
+        {/* 再次体验 Replay Button */}
+        <button
+          onClick={handleReset}
+          className="mt-6 w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
+        >
+          <RefreshCw size={14} className="animate-spin-slow" />
+          再次体验 🔄
+        </button>
       </div>
     </div>
   );
@@ -982,9 +1064,15 @@ export function SpaceStationDragGame() {
     }
   };
 
+  const handleReset = () => {
+    setGridItems({});
+    setComplete(false);
+    speakText("空间站已清空，再次体验宇宙的快乐拼搭吧！");
+  };
+
   return (
     <div className="w-full h-full bg-slate-900/5 select-none flex flex-col md:flex-row relative">
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-900 p-6 flex flex-col items-center justify-center text-white relative">
+      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-900 p-6 flex flex-col items-center justify-center text-white relative">
         <div className="absolute inset-0 bg-radial-gradient from-slate-950 to-slate-900 opacity-60 pointer-events-none" />
         
         <div className="flex flex-col md:flex-row gap-8 items-center justify-center z-10 w-full max-w-2xl px-4">
@@ -1053,20 +1141,20 @@ export function SpaceStationDragGame() {
       </div>
 
       {/* narrative sidebar */}
-      <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white shadow-xl relative">
+      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
         <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-bold w-max mb-3 font-mono">空间站拼搭</span>
-        <h1 className="text-3xl font-extrabold text-slate-800 mb-6 font-sans">颜色空间站建设</h1>
-        <p className="text-lg text-slate-600 leading-relaxed mb-6 font-sans">
-          空间站里有很多小格子隔间。将鼠标悬停在架子上，或者在格子上选择<b>红、黄、蓝积木</b>，让它们住进去！
+        <h1 className="text-2xl font-extrabold text-slate-800 mb-4 font-sans leading-tight">颜色空间站建设</h1>
+        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
+          空间站里有很多小格子隔间。在格子上选择<b>红、黄、蓝积木</b>，让它们住进去！
           请摆弄直到整个<b>3x3拼搭架</b>和右侧的<b>任务对照卡</b>图案保持完全一致！
         </p>
 
         {complete ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <Trophy className="text-yellow-500 w-10 h-10 animate-bounce" />
+            <Trophy className="text-yellow-500 w-10 h-10 animate-bounce shrink-0" />
             <div>
               <h4 className="font-extrabold text-emerald-800">匹配神契！建造成功</h4>
-              <p className="text-emerald-600 text-sm">你是个天才指挥官，空间站正式通电启动！</p>
+              <p className="text-emerald-600 text-xs">你是个天才指挥官，空间站正式通电启动！</p>
             </div>
           </div>
         ) : (
@@ -1074,6 +1162,15 @@ export function SpaceStationDragGame() {
             拼图小提示：第1格红，第2格黄，第3格蓝... 依次搭建！
           </div>
         )}
+
+        {/* 再次体验 Replay Button */}
+        <button
+          onClick={handleReset}
+          className="mt-6 w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
+        >
+          <RefreshCw size={14} className="animate-spin-slow" />
+          再次体验 🔄
+        </button>
       </div>
     </div>
   );
@@ -1162,7 +1259,7 @@ export function ColorSudokuGame() {
 
   return (
     <div className="w-full h-full bg-slate-900/5 select-none flex flex-col md:flex-row relative">
-      <div className="w-full md:w-[60%] h-[50%] md:h-full bg-slate-900 p-6 flex flex-col items-center justify-center text-white relative">
+      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-900 p-6 flex flex-col items-center justify-center text-white relative">
         <div className="absolute inset-0 bg-radial-gradient from-slate-950 to-slate-900 opacity-60 pointer-events-none" />
         
         <div className="flex flex-col gap-6 items-center justify-center z-10">
@@ -1223,35 +1320,44 @@ export function ColorSudokuGame() {
       </div>
 
       {/* side content */}
-      <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white shadow-xl relative">
+      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
         <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold w-max mb-3">智慧闯关 5</span>
-        <h1 className="text-3xl font-extrabold text-slate-800 mb-6 font-sans">宫格九宫数独棋</h1>
-        <p className="text-lg text-slate-600 leading-relaxed mb-6 font-sans">
+        <h1 className="text-2xl font-extrabold text-slate-800 mb-4 font-sans leading-tight">宫格九宫数独棋</h1>
+        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
           最后的高难度终极挑战来啦！颜色数独棋。<br />
           请在空白格处放置<b>红、黄、蓝</b>积木，使得<b>每一行、每一列</b>里都不能有重复颜色的积木。
         </p>
 
         {complete ? (
           <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <Trophy className="text-yellow-500 w-10 h-10 animate-bounce" />
+            <Trophy className="text-yellow-500 w-10 h-10 animate-bounce shrink-0" />
             <div>
               <h4 className="font-extrabold text-emerald-800">挑战成功！数独大宗师</h4>
-              <p className="text-emerald-600 text-sm font-sans">你完全解答了这个高等级思维数独难题，真棒！</p>
+              <p className="text-emerald-600 text-xs font-sans">你完全解答了这个高等级思维数独难题，真棒！</p>
             </div>
           </div>
         ) : errorCells.length > 0 ? (
           <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3">
-            <AlertCircle className="text-red-500 w-8 h-8 shrink-0" />
+            <AlertCircle className="text-red-500 w-8 h-8 shrink-0 animate-pulse" />
             <div>
               <h4 className="font-extrabold text-red-800">出线颜色重复冲突！</h4>
-              <p className="text-red-600 text-sm">观察高亮为红框的格子，调整它们使其避免冲突。</p>
+              <p className="text-red-600 text-xs text-left">观察高亮为红框的格子，调整它们使其避免冲突。</p>
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-indigo-50 border border-indigo-150 rounded-2xl text-indigo-700 text-sm font-bold flex items-center gap-2">
+          <div className="p-4 bg-indigo-50 border border-indigo-150 rounded-2xl text-indigo-700 text-xs font-bold flex items-center gap-2">
             💡 小贴士：横排、竖排，都只放红、黄、蓝各一个哦！
           </div>
         )}
+
+        {/* 再次体验 Replay Button */}
+        <button
+          onClick={clearNonPreset}
+          className="mt-6 w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
+        >
+          <RefreshCw size={14} className="animate-spin-slow" />
+          再次体验 🔄
+        </button>
       </div>
     </div>
   );
