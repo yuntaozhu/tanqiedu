@@ -185,7 +185,7 @@ export function ShapeLessonSelectorGrid({ onSelectLesson }: { onSelectLesson: (i
               `}
             >
               <div className="text-xs font-black tracking-wider opacity-60 mb-2">LESSON {lesson.num}</div>
-              <div className="text-lg md:text-xl font-extrabold pr-2">{lesson.name}</div>
+              <div className="text-lg md:text-xl font-extrabold pr-2">{lesson.num} {lesson.name}</div>
               {lesson.active && (
                 <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-emerald-500" />
               )}
@@ -241,7 +241,7 @@ export function ShapeSubLessonSelector({ onSelectTrack, onBack }: { onSelectTrac
             className={`cursor-pointer rounded-3xl bg-gradient-to-br ${t.color} p-10 flex flex-col justify-between h-96 shadow-xl relative overflow-hidden border border-white/15`}
           >
             <div>
-              <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-lg text-lg font-black font-mono tracking-wider mb-6">{t.tag}</span>
+              <span className="inline-block px-6 py-2.5 bg-white/25 border border-white/35 shadow-md backdrop-blur-md rounded-xl text-2xl md:text-3xl font-black font-mono tracking-wider mb-6">{t.tag}</span>
               <h2 className="text-4xl font-black tracking-tight mb-4">{t.title}</h2>
               <p className={`text-lg leading-relaxed ${t.descColor} font-medium`}>{t.desc}</p>
             </div>

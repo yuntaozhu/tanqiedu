@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Play, Sparkles, AlertCircle, CheckCircle2, 
-  HelpCircle, RefreshCw, Trophy, Heart, ArrowRight, ArrowLeft
+  RefreshCw, Trophy, Heart, ArrowRight, ArrowLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -174,7 +174,7 @@ export function LessonSelectorGrid({ onSelectLesson }: { onSelectLesson: (id: st
               `}
             >
               <div className="text-xs font-black tracking-wider opacity-60 mb-2">LESSON {lesson.num}</div>
-              <div className="text-lg md:text-xl font-extrabold pr-2">{lesson.name}</div>
+              <div className="text-lg md:text-xl font-extrabold pr-2">{lesson.num} {lesson.name}</div>
               {lesson.active && (
                 <div className="absolute right-3 top-3 w-2 h-2 rounded-full bg-emerald-500" />
               )}
@@ -230,7 +230,7 @@ export function SubLessonSelector({ onSelectTrack, onBack }: { onSelectTrack: (t
             className={`cursor-pointer rounded-3xl bg-gradient-to-br ${t.color} p-10 flex flex-col justify-between h-96 shadow-xl relative overflow-hidden border border-white/15`}
           >
             <div>
-              <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-lg text-lg font-black font-mono tracking-wider mb-6">{t.tag}</span>
+              <span className="inline-block px-6 py-2.5 bg-white/25 border border-white/35 shadow-md backdrop-blur-md rounded-xl text-2xl md:text-3xl font-black font-mono tracking-wider mb-6">{t.tag}</span>
               <h2 className="text-4xl font-black tracking-tight mb-4">{t.title}</h2>
               <p className={`text-lg leading-relaxed ${t.descColor} font-medium`}>{t.desc}</p>
             </div>
@@ -249,90 +249,131 @@ export function SubLessonSelector({ onSelectTrack, onBack }: { onSelectTrack: (t
 // 4. ANIMALS SHADOW/FOREST SEARCH GAME
 // ==========================================
 export function ForestSearchGame() {
-  const [complete, setComplete] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
 
   const handlePlay = () => {
     setIsPlaying(true);
-    speakText("开始播放精彩动画视频！");
+    speakText("开始播放讲解视频！");
   };
 
   const handleEnded = () => {
-    setComplete(true);
     playSynthSound('success');
     confetti({ particleCount: 60, spread: 40 });
-    speakText("太棒了！动画观看完毕，我们准备好进入颜色王国了吗？");
+    speakText("太棒了！微课导学动画观看完毕，我们准备好进入颜色王国了吗？");
   };
 
   const handleReset = () => {
-    setComplete(false);
     setIsPlaying(false);
     setVideoKey(prev => prev + 1);
     speakText("再次体验，视频重新开始啦！");
   };
 
   return (
-    <div className="w-full h-full bg-sky-950/20 relative flex flex-col md:flex-row">
-      {/* Video Content Panel */}
-      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-950 overflow-hidden relative p-4 md:p-6 flex items-center justify-center">
-        <div className="relative w-full h-full max-h-[85vh] flex items-center justify-center rounded-2xl overflow-hidden bg-black/90 shadow-2xl border border-slate-800">
-          <video
-            key={videoKey}
-            className="w-full h-full object-contain"
-            src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P6%E8%B6%A3%E5%91%B3%E5%AF%BC%E5%85%A5%E8%A7%86%E9%A2%91.mp4"
-            controls
-            autoPlay
-            onPlay={handlePlay}
-            onEnded={handleEnded}
-          />
-          
-          {!isPlaying && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-xs pointer-events-none">
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-20 h-20 bg-cyan-500 rounded-full flex items-center justify-center text-white text-3xl shadow-lg border border-cyan-300"
+    <div className="w-full h-full bg-slate-50 flex flex-col md:flex-row p-4 md:p-8 select-none gap-6 items-stretch">
+      {/* Left Panel: Video Content in Light Green block */}
+      <div className="flex-1 md:w-[70%] bg-[#E8F5E9] rounded-[2.5rem] border-4 border-[#C8E6C9] p-6 md:p-10 flex flex-col items-center justify-center relative shadow-lg">
+        {/* Dark Blue Absolute Banner */}
+        <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-[#3F51B5] text-white px-8 py-3.5 rounded-2xl shadow-xl font-bold text-lg md:text-xl border-2 border-[#5C6BC0] z-20 whitespace-nowrap tracking-wide flex items-center gap-2">
+          <span>🎬</span> 视频 见2微课导学视频
+        </div>
+
+        {/* Video Player Wrapper */}
+        <div className="relative w-full h-full max-h-[70vh] flex flex-col items-center justify-center mt-4">
+          <div className="relative w-full h-full flex items-center justify-center rounded-3xl overflow-hidden bg-black/95 shadow-2xl border-4 border-emerald-900/10">
+            <video
+              key={videoKey}
+              className="w-full h-full object-contain"
+              src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P6%E8%B6%A3%E5%91%B3%E5%AF%BC%E5%85%A5%E8%A7%86%E9%A2%91.mp4"
+              controls
+              onPlay={handlePlay}
+              onEnded={handleEnded}
+            />
+
+            {!isPlaying && (
+              <div 
+                onClick={() => {
+                  const videoEl = document.querySelector('video');
+                  if (videoEl) {
+                    videoEl.play();
+                    setIsPlaying(true);
+                  }
+                }}
+                className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 backdrop-blur-xs cursor-pointer hover:bg-black/40 transition-all duration-300 group"
               >
-                ▶
-              </motion.div>
-              <span className="text-white font-extrabold mt-4 text-lg drop-shadow-md">点击播放动画</span>
-            </div>
-          )}
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-24 h-24 bg-[#3F51B5] text-white rounded-full flex items-center justify-center text-4xl shadow-2xl border-4 border-indigo-300/50 group-hover:bg-indigo-500 group-hover:scale-105 transition-all"
+                >
+                  ▶
+                </motion.div>
+                <span className="text-white font-extrabold mt-6 text-xl tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  点击播放导学微视频 🎥
+                </span>
+              </div>
+            )}
+          </div>
+          
+          {/* Subtitle / Bottom hint bar */}
+          <div className="mt-4 text-emerald-800/80 font-semibold text-sm flex items-center gap-1.5 self-start">
+            <span className="bg-emerald-200/80 text-emerald-900 px-2.5 py-0.5 rounded-md text-xs">小提示</span>
+            <span>3分钟以内讲解视频，包含开始、暂停和进度拖动控制</span>
+          </div>
         </div>
       </div>
-      
-      {/* Side Content Panel */}
-      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-2xl relative">
-        <span className="px-3 py-1 bg-cyan-100 text-cyan-700 rounded-full text-xs font-bold w-max mb-3">趣味导入</span>
-        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 font-sans leading-tight">颜色王国趣味导入</h1>
-        <p className="text-base text-slate-600 leading-relaxed font-sans mb-6">
-          小朋友，颜色王国准备了一个非常有趣的动画视频！快点击左侧的播放按钮，跟着动画里的小朋友，一起来认识神奇的颜色和小伙伴吧！
-        </p>
-        
-        {complete ? (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col gap-2 shadow-sm">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="text-emerald-500 w-6 h-6 shrink-0" />
-              <h4 className="font-extrabold text-emerald-800">精彩动画观看完毕！</h4>
-            </div>
-            <p className="text-emerald-600 text-xs">小客人都在里面等着我们做游戏咯，快快开始挑战吧！</p>
-          </div>
-        ) : (
-          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-700 text-xs font-bold flex items-center gap-3 animate-pulse">
-            <HelpCircle className="w-5 h-5 shrink-0" />
-            <div>点击播放并观看完左侧动画视频，开启您的颜色探秘之旅！</div>
-          </div>
-        )}
 
-        {/* 再次体验 Replay Button */}
-        <button
-          onClick={handleReset}
-          className="mt-6 w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
-        >
-          <RefreshCw size={14} className="animate-spin-slow" />
-          再次体验 🔄
-        </button>
+      {/* Right Panel: Light Blue Sidebar with Guidance, speech and Dr. Zhang */}
+      <div className="w-full md:w-[30%] bg-[#E1F5FE] rounded-[2.5rem] border-4 border-[#B3E5FC] p-6 md:p-8 flex flex-col justify-between relative shadow-lg min-h-[480px] md:min-h-0 overflow-hidden">
+        
+        {/* Top: Mascot Header */}
+        <div className="flex flex-col items-center gap-3 w-full">
+          {/* Custom tiger mascot card styling */}
+          <div className="relative flex flex-col items-center">
+            {/* Crown/Header decoration mimicking the headset tiger */}
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-md border-2 border-white relative">
+              <span className="text-5xl select-none filter drop-shadow">🐯</span>
+              {/* Headphones decoration */}
+              <div className="absolute -left-2 -right-2 top-6 h-3 bg-indigo-700 rounded-full border border-white" />
+            </div>
+            
+            <div className="mt-3 bg-orange-500 text-white font-black px-6 py-2 rounded-2xl shadow-md border-2 border-white tracking-wide text-md">
+              微课导学 🎯
+            </div>
+          </div>
+        </div>
+
+        {/* Middle: Speech bubble from Dr. Zhang */}
+        <div className="my-auto py-4 flex flex-col items-center relative z-10">
+          <div className="bg-white text-slate-800 p-5 md:p-6 rounded-[2rem] shadow-lg border border-[#B3E5FC] font-sans text-base font-extrabold leading-relaxed text-left relative max-w-xs transform -translate-y-4">
+            <span className="text-blue-600 block mb-1 font-black">💡 智幼专教提点：</span>
+            优秀的老师们请认真观看视频，掌握教授方法。
+            {/* Speech speech bubble notched pointer downwards or left */}
+            <div className="absolute bottom-[-10px] right-[40px] w-6 h-6 bg-white rotate-45 border-r border-b border-[#B3E5FC]/40 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Bottom actions & Standing Dr. Zhang */}
+        <div className="mt-auto w-full relative h-48 flex flex-col justify-end">
+          {/* Replay action bar */}
+          <div className="absolute left-0 bottom-4 w-[55%] z-20">
+            <button
+              onClick={handleReset}
+              className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 text-xs tracking-wider"
+            >
+              <RefreshCw size={12} className="animate-spin-slow stroke-[3]" />
+              再次播放 🔄
+            </button>
+          </div>
+
+          {/* Dr. Zhang Standing Image */}
+          <img
+            src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%9B%BE%E7%89%87%20%E5%BC%A0%E5%8D%9A%E5%A3%AB.png"
+            alt="张博士"
+            className="w-44 md:w-48 h-auto object-contain absolute bottom-[-1rem] right-[-1.5rem] drop-shadow-[0_15px_15px_rgba(0,0,0,0.25)] select-none pointer-events-none z-10"
+            referrerPolicy="no-referrer"
+          />
+        </div>
       </div>
     </div>
   );
