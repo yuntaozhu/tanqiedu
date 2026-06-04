@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Play, Sparkles, AlertCircle, CheckCircle2, 
-  RefreshCw, Trophy, Heart, ArrowRight, ArrowLeft
+  RefreshCw, Trophy, ArrowRight, ArrowLeft,
+  Pause
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -380,6 +381,247 @@ export function ForestSearchGame() {
 }
 
 // ==========================================
+// 4_PREP. COLOR PREPARATION GAME (取教具环节)
+// ==========================================
+export function ColorPrepGame() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [checkedItems, setCheckedItems] = useState({
+    paint: false,
+    board: false,
+    trays: false
+  });
+  const [speechText, setSpeechText] = useState("小朋友，请根据清单准备我们今天的教具物品哦！");
+
+  useEffect(() => {
+    // Create the audio element for preparing tools music
+    audioRef.current = new Audio("https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%8F%96%E6%95%99%E5%85%B7%E9%9F%B3%E4%B9%90.mp3");
+    audioRef.current.loop = true;
+
+    // Speak initial intro
+    speakText("小朋友，要开始动手实操啦！请跟着节奏音乐，根据清单准备好这些教具吧！准备好了就点击它们给它们盖上小蜜蜂印章哦！");
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleToggleMusic = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      playSynthSound('click');
+      setSpeechText("音乐暂停了，等你准备好可以再次播放哦！");
+      speakText("音乐暂停。");
+    } else {
+      audioRef.current.play().catch(err => console.log("Audio play error", err));
+      setIsPlaying(true);
+      playSynthSound('click');
+      setSpeechText("听着节奏动起来！我们先准备红黄蓝三色颜料画笔、实操棋盘和卡纸。");
+      speakText("播放备课音乐。");
+    }
+  };
+
+  const handleToggleCheck = (key: 'paint' | 'board' | 'trays', label: string) => {
+    setCheckedItems(prev => {
+      const isChecking = !prev[key];
+      const updated = { ...prev, [key]: isChecking };
+      
+      if (isChecking) {
+        playSynthSound('success');
+        setSpeechText(`好棒！你已经准备好了：${label} 🌟`);
+        speakText(`准备好了${label}`);
+        
+        // If all checked
+        if (updated.paint && updated.board && updated.trays) {
+          setTimeout(() => {
+            playSynthSound('popup');
+            confetti({
+              particleCount: 120,
+              spread: 70,
+              origin: { y: 0.6 }
+            });
+            setSpeechText("大功告成！所有教具完美准备就绪，让我们进入颜色王国开始智慧大闯关吧！🚀");
+            speakText("哇，太棒了！所有教具准备完整，你可以点击下一页进入闯关挑战啦！");
+          }, 800);
+        }
+      } else {
+        playSynthSound('click');
+        setSpeechText(`已取消选中：${label}`);
+      }
+      return updated;
+    });
+  };
+
+  const handleReset = () => {
+    setCheckedItems({ paint: false, board: false, trays: false });
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setSpeechText("教具清单已重置，请重新跟着音乐准备哦！");
+    speakText("重新准备，加油宝贝！");
+  };
+
+  return (
+    <div className="w-full h-full bg-slate-50 flex flex-col p-4 md:p-8 select-none items-center justify-center">
+      {/* 16:9 Inner Slide Container */}
+      <div className="relative w-full max-w-5xl aspect-video bg-white rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-200">
+        
+        {/* Background Image: the actual template slide */}
+        <img
+          src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P7.png"
+          alt="取教具环节 P7"
+          className="w-full h-full object-contain pointer-events-none select-none"
+          referrerPolicy="no-referrer"
+        />
+
+        {/* ========================================================= */}
+        {/* INTERACTIVE HOTSPOTS OVERLAID VIA EXACT PERCENTAGES       */}
+        {/* ========================================================= */}
+
+        {/* 1. Paint/Splash Area Hotspot */}
+        <div 
+          onClick={() => handleToggleCheck('paint', '红黄蓝三色画笔颜料')}
+          className="absolute left-[14%] top-[16%] w-[41%] h-[23%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-emerald-500/10 border-2 border-transparent hover:border-emerald-500/30"
+          title="点击标记：已准备墨水/颜料"
+        >
+          {checkedItems.paint ? (
+            <motion.div 
+              initial={{ scale: 0, rotate: -15 }}
+              animate={{ scale: 1, rotate: 0 }}
+              className="absolute inset-0 bg-emerald-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-emerald-500/70"
+            >
+              <div className="bg-emerald-600 text-white rounded-full p-2 md:p-3 shadow-xl flex items-center gap-2">
+                <CheckCircle2 size={20} className="animate-bounce" />
+                <span className="font-extrabold text-xs md:text-sm pr-1">颜料准备就绪!</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
+              点击准备好的物品 🎯
+            </div>
+          )}
+        </div>
+
+        {/* 2. Wooden Base Board Area Hotspot */}
+        <div 
+          onClick={() => handleToggleCheck('board', '实操双色棋盘底板')}
+          className="absolute left-[10%] top-[43%] w-[25%] h-[42%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-teal-500/10 border-2 border-transparent hover:border-teal-500/30"
+          title="点击标记：已准备双色球游戏板"
+        >
+          {checkedItems.board ? (
+            <motion.div 
+              initial={{ scale: 0, rotate: 12 }}
+              animate={{ scale: 1, rotate: 0 }}
+              className="absolute inset-0 bg-teal-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-teal-500/70"
+            >
+              <div className="bg-teal-600 text-white rounded-full p-2 md:p-3 shadow-xl flex items-center gap-2">
+                <CheckCircle2 size={20} className="animate-bounce" />
+                <span className="font-extrabold text-xs md:text-sm pr-1">棋盘准备就绪!</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
+              点击准备好的物品 🎯
+            </div>
+          )}
+        </div>
+
+        {/* 3. Cardboard Grids / Paper Area Hotspot */}
+        <div 
+          onClick={() => handleToggleCheck('trays', '九宫格和十连卡纸')}
+          className="absolute left-[37%] top-[49%] w-[20%] h-[31%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-sky-500/10 border-2 border-transparent hover:border-sky-500/30"
+          title="点击标记：已准备九宫数独卡纸与拼搭底卡"
+        >
+          {checkedItems.trays ? (
+            <motion.div 
+              initial={{ scale: 0, rotate: -8 }}
+              animate={{ scale: 1, rotate: 0 }}
+              className="absolute inset-0 bg-sky-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-sky-500/70"
+            >
+              <div className="bg-sky-600 text-white rounded-full p-2 md:p-3 shadow-xl flex items-center gap-2">
+                <CheckCircle2 size={20} className="animate-bounce" />
+                <span className="font-extrabold text-xs md:text-sm pr-1">卡纸准备就绪!</span>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
+              点击准备好的物品 🎯
+            </div>
+          )}
+        </div>
+
+        {/* 4. Orange Music Action Audio Note (Interactive Play/Pause Hotspot) */}
+        <div 
+          onClick={handleToggleMusic}
+          className="absolute left-[67.3%] top-[78%] w-[5.2%] h-[10%] cursor-pointer rounded-xl flex items-center justify-center bg-transparent group"
+          title="播放/暂停 取教具音乐"
+        >
+          {/* Animated floating notes when music is active */}
+          {isPlaying && (
+            <>
+              <motion.div 
+                animate={{ y: [-15, -45], x: [-10, 5], opacity: [0, 1, 0] }}
+                transition={{ repeat: Infinity, duration: 1.8 }}
+                className="absolute text-orange-500 text-xl font-bold select-none pointer-events-none"
+              >
+                🎵
+              </motion.div>
+              <motion.div 
+                animate={{ y: [-20, -55], x: [10, -5], opacity: [0, 1, 0] }}
+                transition={{ repeat: Infinity, duration: 2.2, delay: 0.5 }}
+                className="absolute text-amber-500 text-lg font-bold select-none pointer-events-none"
+              >
+                🎶
+              </motion.div>
+              {/* Outer pulsing ring ring indicator */}
+              <div className="absolute inset-[-10px] rounded-2xl border-4 border-orange-500 border-dashed animate-ping opacity-60 pointer-events-none" />
+            </>
+          )}
+
+          {/* Interactive Toggle Center Button overlaying on top of the note */}
+          <div className={`w-full h-full rounded-2xl flex items-center justify-center transition-all shadow-md group-hover:scale-110 active:scale-95 border-2 ${
+            isPlaying ? 'bg-orange-500 text-white border-white animate-pulse' : 'bg-orange-100/30 border-orange-400 group-hover:bg-orange-400/20'
+          }`}>
+            {isPlaying ? <Pause size={16} className="fill-current text-white" /> : <Play size={16} className="fill-current text-orange-600" />}
+          </div>
+        </div>
+
+        {/* 5. Speech Bubble for Dr. Zhang's overlay */}
+        <div className="absolute right-[26%] top-[38%] max-w-[200px] pointer-events-auto">
+          <motion.div 
+            key={speechText}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/95 border border-indigo-200 shadow-xl px-3 py-2 rounded-2xl text-slate-700 font-extrabold text-[10px] md:text-xs text-center relative leading-snug"
+          >
+            {speechText}
+            <div className="absolute -bottom-2 right-4 w-3 h-3 bg-white/95 border-r border-b border-indigo-200 rotate-45" />
+          </motion.div>
+        </div>
+
+        {/* Reset button inside the slide for easy replay */}
+        <div className="absolute right-[4%] top-[4%] z-10">
+          <button 
+            onClick={handleReset}
+            className="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white font-extrabold text-[10px] rounded-xl flex items-center gap-1 shadow-md transition active:scale-95"
+          >
+            <RefreshCw size={10} />
+            重置清单 🔄
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================
 // 5. TREASURE MAGIC BOX GAME
 // ==========================================
 export function TreasureBoxGame() {
@@ -461,9 +703,7 @@ export function TreasureBoxGame() {
           {/* Red column */}
           <div 
             onClick={() => handleDrop('red')}
-            className={`rounded-2xl border-2 flex flex-col items-center justify-between p-4 cursor-pointer transition-all duration-300
-              ${activeItem?.color === 'red' ? 'border-red-400 bg-red-500/10 scale-102 border-dashed' : 'border-red-900/40 bg-red-950/20'}
-            `}
+            className="rounded-2xl border-2 flex flex-col items-center justify-between p-4 cursor-pointer transition-all duration-300 border-red-900/40 bg-red-950/20"
           >
             <div className="text-center w-full pb-2 border-b border-red-900/30">
               <span className="text-4xl">🔴</span>
@@ -480,13 +720,11 @@ export function TreasureBoxGame() {
           {/* Yellow Column */}
           <div 
             onClick={() => handleDrop('yellow')}
-            className={`rounded-2xl border-2 flex flex-col items-center justify-between p-4 cursor-pointer transition-all duration-300
-              ${activeItem?.color === 'yellow' ? 'border-yellow-400 bg-yellow-500/10 scale-102 border-dashed' : 'border-yellow-900/40 bg-yellow-950/20'}
-            `}
+            className="rounded-2xl border-2 flex flex-col items-center justify-between p-4 cursor-pointer transition-all duration-300 border-yellow-900/40 bg-yellow-950/20"
           >
             <div className="text-center w-full pb-2 border-b border-yellow-900/30">
               <span className="text-4xl">🟡</span>
-              <div className="font-extrabold text-yellow-400 text-sm mt-1">黄色收集格</div>
+              <div className="font-extrabold text-yellow-500 text-sm mt-1">黄色收集格</div>
             </div>
             
             <div className="flex-1 flex flex-wrap gap-2 items-center justify-center p-3">
@@ -499,9 +737,7 @@ export function TreasureBoxGame() {
           {/* Blue Column */}
           <div 
             onClick={() => handleDrop('blue')}
-            className={`rounded-2xl border-2 flex flex-col items-center justify-between p-4 cursor-pointer transition-all duration-300
-              ${activeItem?.color === 'blue' ? 'border-blue-400 bg-blue-500/10 scale-102 border-dashed' : 'border-blue-900/40 bg-blue-950/20'}
-            `}
+            className="rounded-2xl border-2 flex flex-col items-center justify-between p-4 cursor-pointer transition-all duration-300 border-blue-900/40 bg-blue-950/20"
           >
             <div className="text-center w-full pb-2 border-b border-blue-900/30">
               <span className="text-4xl">🔵</span>
@@ -541,10 +777,10 @@ export function TreasureBoxGame() {
               drag
               dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
               onClick={() => speakText(activeItem.label)}
-              className="px-6 py-4 rounded-2xl bg-white text-slate-800 flex items-center gap-3 border shadow-2xl scale-125 cursor-grab active:cursor-grabbing font-extrabold relative"
+              className="px-10 py-6 rounded-[2.5rem] bg-white text-slate-900 flex items-center gap-4 border-4 border-amber-300 shadow-2xl scale-[1.65] cursor-grab active:cursor-grabbing font-black relative min-w-[210px] justify-center transition-all"
             >
-              <span className="text-4xl">{activeItem.icon}</span>
-              <span>{activeItem.label}</span>
+              <span className="text-5xl">{activeItem.icon}</span>
+              <span className="text-xl">{activeItem.label}</span>
               <span className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-indigo-500 rounded-full animate-ping" />
             </motion.div>
           )}
@@ -554,10 +790,11 @@ export function TreasureBoxGame() {
 
       {/* Intro Panel sidebar */}
       <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
-        <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-xs font-bold w-max mb-3">实操交互</span>
-        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 leading-tight">魔法宝箱寻宝格</h1>
-        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
-          点击魔法底下的宝箱，召唤颜色王国的宝贝！然后把召唤出来的宝贝通过<b>点击</b>或拖手入库对应的<b>红、黄、蓝</b>收集框中吧！
+        <div className="mb-4">
+          <span className="px-6 py-2.5 bg-violet-100 border-2 border-violet-200 text-violet-800 rounded-2xl text-base md:text-lg font-black tracking-wide inline-block shadow-sm">实操交互 🧩</span>
+        </div>
+        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans font-extrabold">
+          点击魔法底下的宝箱，召唤颜色王国的宝贝！然后把召唤出来的宝贝通过<b>点击</b>对应的<b>红、黄、蓝</b>收集框中进行分拣归类吧！
         </p>
 
         {complete ? (
@@ -604,15 +841,15 @@ export function AnimalConnectGame() {
   const [complete, setComplete] = useState(false);
 
   const animals = [
-    { id: 'octopus', name: '小章鱼', emoji: '🐙', color: 'blue', label: '蓝色' },
-    { id: 'giraffe', name: '长颈鹿', emoji: '🦒', color: 'yellow', label: '黄色' },
-    { id: 'pig', name: '小松戴/粉猪', emoji: '🐷', color: 'red', label: '红色' }
+    { id: 'octopus', name: '小章鱼', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/1.jpg', color: 'blue', label: '蓝色' },
+    { id: 'giraffe', name: '长颈鹿', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/3.jpg', color: 'yellow', label: '黄色' },
+    { id: 'pig', name: '小松戴/粉猪', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/2.jpg', color: 'red', label: '红色' }
   ];
 
   const paintColors = [
-    { id: 'red', splat: '🔴', label: '红色' },
-    { id: 'yellow', splat: '🟡', label: '黄色' },
-    { id: 'blue', splat: '🔵', label: '蓝色' }
+    { id: 'red', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/4.jpg', label: '红色' },
+    { id: 'yellow', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/5.jpg', label: '黄色' },
+    { id: 'blue', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/6.jpg', label: '蓝色' }
   ];
 
   const handleConnect = (colorId: string) => {
@@ -664,13 +901,18 @@ export function AnimalConnectGame() {
                     setSelectedAnimal(anim.id === selectedAnimal ? null : anim.id);
                   }}
                   disabled={connected}
-                  className={`w-28 h-28 rounded-2xl flex flex-col items-center justify-center border shadow-md relative transition-all duration-300
+                  className={`w-28 h-28 rounded-2xl flex flex-col items-center justify-center border shadow-md relative transition-all duration-300 overflow-hidden
                     ${connected ? 'bg-emerald-500/10 border-emerald-400 opacity-60' : ''}
                     ${selectedAnimal === anim.id ? 'bg-blue-600 border-blue-400 text-white scale-105' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-600'}
                   `}
                 >
-                  <span className="text-4xl mb-1">{anim.emoji}</span>
-                  <span className="text-sm font-extrabold">{anim.name}</span>
+                  <img 
+                    src={anim.img} 
+                    alt={anim.name} 
+                    className="w-14 h-14 object-cover rounded-xl mb-1 shadow-inner" 
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="text-xs font-extrabold">{anim.name}</span>
                 </button>
               );
             })}
@@ -707,12 +949,17 @@ export function AnimalConnectGame() {
                   key={color.id}
                   onClick={() => handleConnect(color.id)}
                   disabled={!selectedAnimal || connected}
-                  className={`w-28 h-28 rounded-2xl flex flex-col items-center justify-center border shadow-md relative transition-all duration-300
+                  className={`w-28 h-28 rounded-2xl flex flex-col items-center justify-center border shadow-md relative transition-all duration-300 overflow-hidden
                     ${connected ? 'bg-emerald-500/10 border-emerald-400 opacity-60' : ''}
                     ${selectedAnimal ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500/50 hover:scale-105 cursor-pointer' : 'bg-slate-800/40 border-slate-800/40 text-slate-600'}
                   `}
                 >
-                  <span className="text-5xl">{color.splat}</span>
+                  <img 
+                    src={color.img} 
+                    alt={color.label} 
+                    className="w-14 h-14 object-cover rounded-xl mb-1 shadow-inner" 
+                    referrerPolicy="no-referrer"
+                  />
                   <span className="text-xs font-bold mt-1">{color.label}</span>
                 </button>
               );
@@ -767,138 +1014,306 @@ export function AnimalConnectGame() {
 // ==========================================
 export function ShapeColoringGame() {
   const [selectedBrush, setSelectedBrush] = useState<'red' | 'yellow' | 'blue' | null>(null);
-  const [coloredShapes, setColoredShapes] = useState<Record<string, string>>({});
+  const [coloredRows, setColoredRows] = useState<Record<string, boolean>>({
+    car: false,
+    plane: false,
+    house: false
+  });
   const [complete, setComplete] = useState(false);
+  const [helperText, setHelperText] = useState("请先点击右侧彩色颜料溅溅选择画刷，再点击左侧对应黑白结构图到着色连线！");
 
-  // House: blue, Plane: yellow, Car: red
-  const shapes = [
-    { id: 'car', name: '玩具赛车', outline: '🚗', color: 'red', label: '红色' },
-    { id: 'plane', name: '太空大飞机', outline: '✈️', color: 'yellow', label: '黄色' },
-    { id: 'house', name: '蓝色小房子', outline: '🏠', color: 'blue', label: '蓝色' }
+  useEffect(() => {
+    speakText("小朋友，太空大飞机是黄色的，玩具赛车是红色的，蓝色小房子是蓝色的，请在右侧选择对应的颜料，把他们连起来并着色吧！");
+  }, []);
+
+  // Colored references shown at top
+  const references = [
+    { id: 'plane', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/8.jpg', name: '黄色：太空大飞机', color: 'yellow' },
+    { id: 'car', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/9.jpg', name: '红色：玩具赛车', color: 'red' },
+    { id: 'house', img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/10.jpg', name: '蓝色：蓝色小房子', color: 'blue' }
   ];
 
-  const handlePaint = (shapeId: string) => {
-    if (!selectedBrush) {
-      speakText("请先选个油漆刷子哦");
+  // Map rows: Silhouette to Splash with color matching
+  const matchingRows = [
+    { 
+      id: 'house', 
+      outline: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/11.jpg', 
+      colored: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/10.jpg',
+      colorKey: 'blue' as const, 
+      colorName: '蓝色',
+      title: '蓝色小房子',
+      splashImg: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/6.jpg'
+    },
+    { 
+      id: 'plane', 
+      outline: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/12.jpg', 
+      colored: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/8.jpg',
+      colorKey: 'yellow' as const, 
+      colorName: '黄色',
+      title: '太空大飞机',
+      splashImg: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/5.jpg'
+    },
+    { 
+      id: 'car', 
+      outline: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/13.jpg', 
+      colored: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/GAME2/9.jpg',
+      colorKey: 'red' as const, 
+      colorName: '红色',
+      title: '玩具赛车',
+      splashImg: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/4.jpg'
+    }
+  ];
+
+  const palette = [
+    { color: 'red' as const, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/4.jpg', label: '红色颜料' },
+    { color: 'yellow' as const, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/5.jpg', label: '黄色颜料' },
+    { color: 'blue' as const, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/6.jpg', label: '蓝色颜料' }
+  ];
+
+  const handleRowClick = (rowId: string, expectedColor: 'red' | 'yellow' | 'blue', title: string) => {
+    if (coloredRows[rowId]) {
+      speakText(`${title}已经着色连线成功啦！`);
       return;
     }
-    const s = shapes.find(x => x.id === shapeId);
-    if (!s) return;
 
-    if (s.color === selectedBrush) {
+    if (!selectedBrush) {
+      playSynthSound('fail');
+      setHelperText("哎呀，小火箭要燃料了！请先选择右侧的彩色颜料吧！");
+      speakText("请先在右侧挑一罐你喜欢的彩色颜料吧！");
+      return;
+    }
+
+    if (selectedBrush === expectedColor) {
       playSynthSound('success');
-      const updated = { ...coloredShapes, [shapeId]: selectedBrush };
-      setColoredShapes(updated);
+      const updated = { ...coloredRows, [rowId]: true };
+      setColoredRows(updated);
       setSelectedBrush(null);
+      setHelperText(`太棒了！你完美连接并着色了：${title}！✨`);
+      speakText(`真聪明！着色成功，漂亮的${title}连接好了！`);
 
-      if (Object.keys(updated).length === shapes.length) {
+      if (updated.car && updated.plane && updated.house) {
         setComplete(true);
-        confetti({ particleCount: 80, spread: 60 });
-        speakText("连涂游戏顺利通过！你是一个伟大的小画家！");
+        setTimeout(() => {
+          playSynthSound('popup');
+          confetti({ particleCount: 100, spread: 50 });
+          setHelperText("哇！黑白轮廓全部变成彩色的大飞机、小红车和蓝房子啦！你是天才小画家！🎖️");
+          speakText("太神奇了！所有的玩具都拥有了艳丽的颜色，我们太棒啦！");
+        }, 1000);
       }
     } else {
       playSynthSound('fail');
-      speakText("颜色的搭配弄错啦，重新想一想。");
+      setHelperText(`搭配不对哦。对照上方的模型看看：${title}应该是什么颜色的呢？`);
+      speakText(`停一停、想一想、再试一试！${title}好像不是这个色哦。`);
     }
   };
 
   const handleReset = () => {
     setSelectedBrush(null);
-    setColoredShapes({});
+    setColoredRows({ car: false, plane: false, house: false });
     setComplete(false);
-    speakText("调色盘清空啦，再次体验涂色魔法吧！");
+    setHelperText("调色盘已经重新擦得干干净净啦，我们重新出发！");
+    speakText("颜料和画布重置成功，请重新开始挑战吧！");
   };
 
   return (
-    <div className="w-full h-full bg-slate-900/5 select-none flex flex-col md:flex-row relative">
+    <div className="w-full h-full bg-slate-50 flex flex-col md:flex-row p-4 md:p-8 select-none gap-6 items-stretch">
       
-      {/* Visual Canvas Panel */}
-      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-900 flex flex-col p-6 text-white justify-between relative">
-        <div className="absolute inset-0 bg-radial-gradient from-slate-900 to-indigo-950 opacity-50 pointer-events-none" />
+      {/* Left Area: Digital Dynamic Worksheet Panel */}
+      <div className="flex-1 md:w-[70%] bg-[#F9F9FB] rounded-[2.5rem] border-4 border-amber-100 p-6 flex flex-col justify-between relative shadow-lg overflow-hidden">
         
-        {/* Paint Brushes */}
-        <div className="flex justify-center gap-6 relative z-10 py-2 border-b border-slate-800/40">
-          {(['red', 'yellow', 'blue'] as const).map((color) => (
-            <button
-              key={color}
-              onClick={() => {
-                playSynthSound('click');
-                setSelectedBrush(color);
-              }}
-              className={`px-5 py-2.5 rounded-full font-black flex items-center gap-2 border shadow-lg transition-all
-                ${color === 'red' ? 'bg-red-600 text-white border-red-500 hover:bg-red-500' : ''}
-                ${color === 'yellow' ? 'bg-amber-400 text-slate-800 border-amber-300 hover:bg-amber-300' : ''}
-                ${color === 'blue' ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-500' : ''}
-                ${selectedBrush === color ? 'ring-4 ring-white ring-offset-2 ring-offset-slate-900 scale-108' : ''}
-              `}
-            >
-              <span>🖌️</span>
-              <span>{color === 'red' ? '红画刷-赛车' : color === 'yellow' ? '黄画刷-飞机' : '蓝画刷-房子'}</span>
-            </button>
-          ))}
+        {/* Top Reference Cards Header */}
+        <div className="w-full flex flex-col items-center">
+          <div className="bg-amber-100 text-amber-800 font-extrabold text-xs md:text-sm px-4 py-1.5 rounded-full mb-4 inline-flex items-center gap-2">
+            🎨 参照对照组：瞧瞧他们原本鲜艳美丽的颜色
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4 w-full max-w-xl">
+            {references.map((ref) => (
+              <div 
+                key={ref.id}
+                className="bg-white rounded-2xl border-2 border-slate-100 shadow-sm p-2.5 flex flex-col items-center justify-center relative group overflow-hidden"
+              >
+                <img 
+                  src={ref.img} 
+                  alt={ref.name} 
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain transition-transform group-hover:scale-110" 
+                  referrerPolicy="no-referrer"
+                />
+                <span className="text-[10px] md:text-xs font-extrabold text-slate-700 mt-2">{ref.name}</span>
+                {/* Micro glowing band */}
+                <div className={`absolute bottom-0 left-0 right-0 h-1.5 ${
+                  ref.color === 'yellow' ? 'bg-amber-400' : ref.color === 'red' ? 'bg-red-500' : 'bg-blue-500'
+                }`} />
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Outline shapes */}
-        <div className="flex-1 grid grid-cols-3 gap-6 items-center p-4 relative z-10">
-          {shapes.map((s) => {
-            const isPainted = coloredShapes[s.id] !== undefined;
+        {/* Middle Matching Rows */}
+        <div className="flex-1 w-full flex flex-col justify-center gap-5 my-6 py-2 px-4">
+          {matchingRows.map((row) => {
+            const isMatched = coloredRows[row.id];
+            
             return (
-              <div
-                key={s.id}
-                onClick={() => handlePaint(s.id)}
-                className={`h-full max-h-[180px] rounded-2xl flex flex-col items-center justify-center border-4 cursor-pointer transition-all duration-300 select-none
-                  ${isPainted 
-                    ? s.color === 'red' ? 'bg-red-500/20 border-red-500 text-white' : s.color === 'yellow' ? 'bg-amber-500/20 border-amber-400 text-white' : 'bg-blue-500/20 border-blue-500 text-white'
-                    : 'border-slate-700/60 bg-slate-800/40 text-slate-500'
+              <div 
+                key={row.id}
+                onClick={() => handleRowClick(row.id, row.colorKey, row.title)}
+                className={`flex items-center justify-between w-full p-2 rounded-2xl border-2 transition-all cursor-pointer select-none group
+                  ${isMatched 
+                    ? 'bg-emerald-500/5 border-emerald-300' 
+                    : selectedBrush === row.colorKey 
+                      ? 'border-dashed border-indigo-400 bg-indigo-50/20 hover:bg-indigo-50/40' 
+                      : 'border-slate-100 bg-white hover:bg-slate-50'
                   }
-                  ${selectedBrush && !isPainted ? 'hover:scale-102 hover:border-slate-500 border-dashed' : ''}
                 `}
               >
-                <span className={`text-7xl mb-2 transition-transform duration-300 ${isPainted ? 'scale-115 text-white' : 'filter grayscale contrast-50 opacity-40'}`}>
-                  {s.outline}
-                </span>
-                <span className="font-extrabold text-sm tracking-wide">{s.name}</span>
+                {/* 1. Outline or Colored figure */}
+                <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 bg-white shadow-inner flex items-center justify-center rounded-2xl border border-slate-200 overflow-hidden">
+                  <img 
+                    src={isMatched ? row.colored : row.outline} 
+                    alt={row.title}
+                    className="w-14 h-14 md:w-16 md:h-16 object-contain p-1 transition-all"
+                    referrerPolicy="no-referrer"
+                  />
+                  {isMatched && (
+                    <div className="absolute top-1 left-1 bg-emerald-500 text-white rounded-full p-0.5 shadow-md">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Dotted Link with interactive dots */}
+                <div className="flex-1 mx-4 md:mx-6 flex items-center relative h-6">
+                  <div className={`w-3 h-3 rounded-full transition-colors ${isMatched ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-amber-400'}`} />
+                  <svg className="flex-1 h-3">
+                    <line 
+                      x1="0%" y1="50%" x2="100%" y2="50%" 
+                      stroke={isMatched ? (row.colorKey === 'blue' ? '#3B82F6' : row.colorKey === 'red' ? '#EF4444' : '#F59E0B') : '#CBD5E1'} 
+                      strokeWidth="3.5" 
+                      strokeDasharray="6,4"
+                      className={isMatched ? 'animate-marquee' : ''}
+                    />
+                  </svg>
+                  <div className={`w-3 h-3 rounded-full transition-colors ${isMatched ? 'bg-emerald-500 shadow-[0_0_8px_#10B981]' : 'bg-slate-300'}`} />
+                </div>
+
+                {/* 3. Splash Splat indicator */}
+                <div className="relative w-16 h-16 md:w-20 md:h-20 shrink-0 flex items-center justify-center p-1 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                  <img 
+                    src={row.splashImg} 
+                    alt="splash"
+                    className={`w-14 h-14 md:w-16 md:h-16 object-contain p-0.5 transition-all duration-300
+                      ${isMatched ? 'opacity-100 scale-105' : 'opacity-15 grayscale pointer-events-none'}
+                    `}
+                    referrerPolicy="no-referrer"
+                  />
+                  {!isMatched && (
+                    <div className="absolute inset-0 bg-transparent flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50/50">
+                        <span className="text-slate-400 text-xs">?</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Narrative Side block */}
-      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
-        <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold w-max mb-3">智慧闯关 2</span>
-        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 font-sans">七彩轮廓涂色卡</h1>
-        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
-          画刷能给黑白的赛车、飞机和房屋注入生命力。
-          请<b>选择一款彩色画刷</b>，然后<b>点击对应的黑白物体轮廓</b>为其着色匹配。
-        </p>
+      {/* Right Area: Light Palette & Instructions */}
+      <div className="w-full md:w-[30%] bg-[#FFF3E0] rounded-[2.5rem] border-4 border-[#FFE0B2] p-6 md:p-8 flex flex-col justify-between relative shadow-lg min-h-[500px] md:min-h-0 overflow-hidden">
+        
+        {/* Color Palette Heading */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-orange-500 text-white font-black px-6 py-2 rounded-2xl shadow-md border-2 border-white tracking-wide text-md">
+            调色盘颜料包 🖌️
+          </div>
+          <span className="text-[11px] text-orange-900/60 font-black">第1步：任选一款色开始着色</span>
+        </div>
 
-        {complete ? (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <Heart className="text-red-500 w-8 h-8 fill-current shrink-0" />
-            <div>
-              <h4 className="font-extrabold text-emerald-800">着色大功告成！</h4>
-              <p className="text-emerald-600 text-xs">红色的玩具赛车、黄色的飞机和蓝色的房子真漂亮！</p>
+        {/* The 3 fully colored splashes palette */}
+        <div className="my-4 flex flex-row md:flex-col items-center justify-center gap-4 py-2">
+          {palette.map((p) => {
+            const isSelected = selectedBrush === p.color;
+            return (
+              <button
+                key={p.color}
+                onClick={() => {
+                  playSynthSound('click');
+                  setSelectedBrush(p.color);
+                  setHelperText(`已经准备好了：${p.label}！快点击对应的灰白轮廓配配乐吧！`);
+                  speakText(`准备好${p.color === 'red' ? '红色' : p.color === 'yellow' ? '黄色' : '蓝色'}颜料啦！`);
+                }}
+                className={`relative w-20 h-20 md:w-24 md:h-24 p-1.5 rounded-3xl bg-white border shadow-md flex items-center justify-center transition-all duration-300 hover:scale-105
+                  ${isSelected 
+                    ? 'ring-4 ring-orange-500 ring-offset-2 border-transparent scale-110' 
+                    : 'border-slate-200 hover:border-orange-200'
+                  }
+                `}
+              >
+                <img 
+                  src={p.img} 
+                  alt={p.label} 
+                  className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
+                />
+                
+                {/* Selected glowing ring or badge */}
+                {isSelected && (
+                  <div className="absolute top-1 right-1 bg-orange-600 text-white font-black text-[9px] px-1.5 py-0.5 rounded-full shadow-md animate-bounce">
+                    已选
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Instructions speech box */}
+        <div className="bg-white text-slate-800 p-4 md:p-5 rounded-[1.8rem] shadow-md border border-orange-100 text-xs md:text-sm font-extrabold leading-relaxed text-left relative my-2">
+          {complete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-3xl animate-bounce">🏆</span>
+              <div>
+                <span className="text-emerald-600 block font-black text-sm">着色连线大功告成！</span>
+                <span className="text-slate-600 font-extrabold text-xs">小朋友太厉害了！三组颜料全部对齐连接成功！</span>
+              </div>
             </div>
-          </div>
-        ) : selectedBrush ? (
-          <div className="p-4 bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold animate-pulse">
-            画笔已就绪：点击中间的黑白结构填图吧！
-          </div>
-        ) : (
-          <div className="p-4 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold">
-            第一步：请先在上方任选一款精美的彩色画刷！
-          </div>
-        )}
+          ) : (
+            <>
+              <span className="text-orange-600 block mb-1 font-black">💡 智幼大闯关说明：</span>
+              {helperText}
+            </>
+          )}
+          <div className="absolute bottom-[-10px] right-[40px] w-5 h-5 bg-white rotate-45 border-r border-b border-orange-100 pointer-events-none" />
+        </div>
 
-        {/* 再次体验 Replay Button */}
-        <button
-          onClick={handleReset}
-          className="mt-6 w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
-        >
-          <RefreshCw size={14} className="animate-spin-slow" />
-          再次体验 🔄
-        </button>
+        {/* Reset & Dr. Zhang */}
+        <div className="mt-auto w-full relative h-[140px] flex flex-col justify-end">
+          {/* Replay action bar */}
+          <div className="absolute left-0 bottom-4 w-[55%] z-20">
+            <button
+              onClick={handleReset}
+              className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-lg flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 text-xs tracking-wider"
+            >
+              <RefreshCw size={11} className="animate-spin-slow stroke-[3]" />
+              重置游戏 🔄
+            </button>
+          </div>
+
+          {/* Dr. Zhang Standing Image */}
+          <img
+            src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%9B%BE%E7%89%87%20%E5%BC%A0%E5%8D%9A%E5%A3%AB.png"
+            alt="张博士"
+            className="w-36 h-auto object-contain absolute bottom-[-1rem] right-[-1.5rem] drop-shadow-[0_15px_15px_rgba(0,0,0,0.25)] select-none pointer-events-none z-10"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
       </div>
     </div>
   );
@@ -911,38 +1326,57 @@ export function DoubleColorGame() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [correctFlags, setCorrectFlags] = useState<Record<number, boolean>>({});
   const [complete, setComplete] = useState(false);
+  const [helperText, setHelperText] = useState("请先点击左侧两两拥抱的彩色泡泡宝宝，然后找出右侧颜色搭配相同的双色积木来完成着色连线吧！");
+
+  useEffect(() => {
+    speakText("小朋友，瞧，左边是颜色王国最亲密的拥拥泡泡组合，右边是双色积木板。请选择两边颜色互相对应的一组，把它们连接起来吧！");
+  }, []);
 
   const columnLeft = [
-    { id: 1, colors: ['🔴', '🟡'], label: '红 + 黄 双生泡泡' },
-    { id: 2, colors: ['🔵', '🔴'], label: '蓝 + 红 双生泡泡' },
-    { id: 3, colors: ['🔵', '🟡'], label: '蓝 + 黄 双生泡泡' },
-    { id: 4, colors: ['🔴', '🔵'], label: '红 + 蓝 双生泡泡' }
+    { id: 1, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/16.jpg', label: '红色与黄色拥拥球', desc: '红红和黄黄亲密无间拥抱在一起！' },
+    { id: 2, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/17.jpg', label: '蓝色与红色拥拥球', desc: '蓝蓝和红红暖心拥抱在一起！' },
+    { id: 3, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/18.jpg', label: '蓝色与黄色拥拥球', desc: '蓝蓝和黄黄亲切拥抱在一起！' },
+    { id: 4, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/19.jpg', label: '红色与蓝色拥拥球', desc: '红红和蓝蓝热情拥抱在一起！' }
   ];
 
   const columnRight = [
-    { targetId: 2, scheme: ['🔵', '🔴'], label: '左蓝右红 积木板' },
-    { targetId: 3, scheme: ['🔵', '🟡'], label: '左蓝右黄 积木板' },
-    { targetId: 1, scheme: ['🔴', '🟡'], label: '左红右黄 积木板' },
-    { targetId: 4, scheme: ['🔴', '🔵'], label: '左红右蓝 积木板' }
+    { targetId: 4, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/20.jpg', label: '左红右蓝积木板' },
+    { targetId: 3, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/21.jpg', label: '左蓝右黄积木板' },
+    { targetId: 2, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/22.jpg', label: '左蓝右红积木板' },
+    { targetId: 1, img: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/game3/23.jpg', label: '左红右黄积木板' }
   ];
 
   const handleMatch = (targetId: number) => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      playSynthSound('fail');
+      setHelperText("请先点击左边的彩色拥拥球泡泡寻找它的伙伴哦！");
+      speakText("请先点击左边的拥拥球，再选择右边配色相同的积木板吧！");
+      return;
+    }
 
     if (selectedId === targetId) {
       playSynthSound('success');
       const updated = { ...correctFlags, [selectedId]: true };
       setCorrectFlags(updated);
       setSelectedId(null);
+      
+      const leftItem = columnLeft.find(x => x.id === selectedId);
+      setHelperText(`太棒啦！正确连接：${leftItem?.label} 配对成功！✨`);
+      speakText(`${leftItem?.label} 配对成功，真是太棒了！`);
 
       if (Object.keys(updated).length === columnLeft.length) {
         setComplete(true);
-        confetti({ particleCount: 90, spread: 60 });
-        speakText("左侧积木配对全部通关！");
+        setTimeout(() => {
+          playSynthSound('popup');
+          confetti({ particleCount: 100, spread: 50 });
+          setHelperText("哇！所有的拥抱泡泡和双色积木都成功连结起来了！你的色彩观察力和数形匹配力简直是天才级别！🎖️");
+          speakText("太了不起了！你完成了全部的拥抱泡泡和彩球对应的双色积木连线挑战！");
+        }, 1000);
       }
     } else {
       playSynthSound('fail');
-      speakText("这边的颜色组合和左侧的不一样哦");
+      setHelperText("这个积木的颜色好像和我们的双色泡泡不搭哦，再来“停一停、想一想、试一试”！");
+      speakText("颜色不太搭哦，请停一停、想一想、再试一试！");
     }
   };
 
@@ -950,18 +1384,80 @@ export function DoubleColorGame() {
     setSelectedId(null);
     setCorrectFlags({});
     setComplete(false);
-    speakText("双色泡泡积木板重置成功，再次体验拼拼乐吧！");
+    setHelperText("拼图已经全部擦拭干净，请再次体验色彩积木的奇妙魔力吧！");
+    speakText("拥拥球和积木重置成功，请重新开始新的一轮连线挑战吧！");
+  };
+
+  // SVG lines rendering logic
+  const getLineCoordinates = (leftId: number) => {
+    // leftId is 1,2,3,4
+    // Vertically:
+    // Left row indices: 0 (id 1), 1 (id 2), 2 (id 3), 3 (id 4) -> heights: 12.5%, 37.5%, 62.5%, 87.5%
+    // Right row indices: 0 (id 4), 1 (id 3), 2 (id 2), 3 (id 1) -> heights: 12.5%, 37.5%, 62.5%, 87.5%
+    let y1 = '12.5%';
+    let y2 = '87.5%';
+    
+    if (leftId === 1) { y1 = '12.5%'; y2 = '87.5%'; }
+    else if (leftId === 2) { y1 = '37.5%'; y2 = '62.5%'; }
+    else if (leftId === 3) { y1 = '62.5%'; y2 = '37.5%'; }
+    else if (leftId === 4) { y1 = '87.5%'; y2 = '12.5%'; }
+
+    return { y1, y2 };
   };
 
   return (
-    <div className="w-full h-full bg-slate-900/5 select-none flex flex-col md:flex-row relative">
-      <div className="w-full md:w-[73%] h-[50%] md:h-full bg-slate-950 flex p-6 items-center justify-center relative">
-        <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-8 flex justify-between shadow-2xl relative z-10 gap-10 items-stretch">
+    <div className="w-full h-full bg-slate-50 flex flex-col md:flex-row p-4 md:p-8 select-none gap-6 items-stretch">
+      
+      {/* Left Workspace area */}
+      <div className="flex-1 md:w-[70%] bg-[#F9F9FB] rounded-[2.5rem] border-4 border-amber-100 p-6 flex flex-col justify-between relative shadow-lg overflow-hidden">
+        
+        {/* Dynamic Connected Board container */}
+        <div className="flex-1 relative flex justify-between items-stretch py-4">
           
-          {/* Left Column - Double colors bubble */}
-          <div className="flex flex-col justify-between gap-4 flex-1">
+          {/* Absolute SVG overlay */}
+          <svg className="absolute inset-0 pointer-events-none w-full h-full z-15">
             {columnLeft.map((item) => {
               const matched = correctFlags[item.id] !== undefined;
+              const { y1, y2 } = getLineCoordinates(item.id);
+              const isSelected = selectedId === item.id;
+
+              return (
+                <g key={item.id}>
+                  {/* Subtle trace background trace line */}
+                  <line 
+                    x1="38%" 
+                    y1={y1} 
+                    x2="62%" 
+                    y2={y2} 
+                    stroke={matched ? (item.id === 1 ? '#EF4444' : item.id === 2 ? '#3B82F6' : item.id === 3 ? '#10B981' : '#F59E0B') : '#E2E8F0'} 
+                    strokeWidth={matched ? '5' : '3'} 
+                    strokeDasharray={matched ? undefined : '5,5'}
+                    opacity={matched ? 1 : 0.45}
+                    className="transition-all duration-300"
+                  />
+                  {isSelected && (
+                    <line 
+                      x1="38%" 
+                      y1={y1} 
+                      x2="62%" 
+                      y2={y2} 
+                      stroke="#818CF8" 
+                      strokeWidth="3.5" 
+                      strokeDasharray="6,4"
+                      className="animate-marquee opacity-80"
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Left Column - Big Hugging Balls */}
+          <div className="w-[38%] flex flex-col justify-between gap-4 z-20">
+            {columnLeft.map((item) => {
+              const matched = correctFlags[item.id] !== undefined;
+              const isSelected = selectedId === item.id;
+              
               return (
                 <button
                   key={item.id}
@@ -971,95 +1467,150 @@ export function DoubleColorGame() {
                     setSelectedId(item.id === selectedId ? null : item.id);
                   }}
                   disabled={matched}
-                  className={`py-3.5 px-4 rounded-xl border flex items-center justify-center gap-3 transition-all duration-300
-                    ${matched ? 'bg-emerald-500/10 border-emerald-400 opacity-60 pointer-events-none' : ''}
-                    ${selectedId === item.id ? 'bg-blue-600 border-blue-400 text-white scale-102 ring-2 ring-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500'}
+                  className={`relative w-full h-[105px] md:h-[125px] rounded-[2rem] border-4 bg-white flex items-center justify-center p-2 shadow-md transition-all duration-300 group
+                    ${matched 
+                      ? 'border-emerald-300 bg-emerald-500/5 cursor-not-allowed opacity-80' 
+                      : isSelected 
+                        ? 'border-amber-400 ring-4 ring-amber-300/40 scale-105' 
+                        : 'border-slate-100 hover:border-amber-200'
+                    }
                   `}
                 >
-                  <div className="flex gap-1 text-2xl">
-                    {item.colors.map((emoji, idx) => (
-                      <span key={idx}>{emoji}</span>
-                    ))}
-                  </div>
+                  <img 
+                    src={item.img} 
+                    alt={item.label} 
+                    className={`w-auto h-full max-h-[85px] md:max-h-[105px] object-contain p-0.5 transition-transform group-hover:scale-105 ${matched ? 'filter grayscale-0' : ''}`}
+                    referrerPolicy="no-referrer"
+                  />
+                  
+                  {/* Matching connector port right dot */}
+                  <div className={`absolute right-[-10px] top-1/2 -translate-y-1/2 w-4.5 h-4.5 rounded-full border-4 border-white shadow transition-all duration-300
+                    ${matched ? 'bg-emerald-500 scale-110 shadow-[0_0_8px_#10B981]' : isSelected ? 'bg-indigo-500 animate-pulse' : 'bg-amber-400 group-hover:scale-110'}
+                  `} />
+
+                  {/* Micro Checked Banner */}
+                  {matched && (
+                    <div className="absolute top-2 left-2 bg-emerald-500 text-white rounded-full p-0.5 shadow-sm scale-90">
+                      <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
                 </button>
               );
             })}
           </div>
 
-          <div className="w-0.5 bg-slate-800" />
+          <div className="w-[10%] pointer-events-none" />
 
-          {/* Right Column - Double block brick template */}
-          <div className="flex flex-col justify-between gap-4 flex-1">
-            {columnRight.map((r, i) => {
+          {/* Right Column - Corresponding block pattern */}
+          <div className="w-[38%] flex flex-col justify-between gap-4 z-20">
+            {columnRight.map((r) => {
               const matched = correctFlags[r.targetId] !== undefined;
+              const isTargeting = selectedId !== null;
+              
               return (
                 <button
-                  key={i}
+                  key={r.targetId}
                   onClick={() => handleMatch(r.targetId)}
-                  disabled={!selectedId || matched}
-                  className={`py-3.5 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all duration-300
-                    ${matched ? 'bg-emerald-500/10 border-emerald-400 opacity-60 pointer-events-none' : ''}
-                    ${selectedId ? 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:scale-102 cursor-pointer' : 'bg-slate-800/40 border-slate-800/40 text-slate-500'}
+                  disabled={matched}
+                  className={`relative w-full h-[105px] md:h-[125px] rounded-[2rem] border-4 bg-white flex items-center justify-center p-2 shadow-md transition-all duration-300 group
+                    ${matched 
+                      ? 'border-emerald-300 bg-emerald-500/5 cursor-not-allowed opacity-80' 
+                      : isTargeting 
+                        ? 'border-indigo-200 hover:border-indigo-400 hover:scale-105 cursor-pointer bg-slate-50/50' 
+                        : 'border-slate-100 hover:border-amber-200'
+                    }
                   `}
                 >
-                  {/* Visual Crayon lego block */}
-                  <div className="flex w-16 h-8 rounded-md overflow-hidden border border-slate-700 shadow-inner">
-                    <div 
-                      className="flex-1" 
-                      style={{ 
-                        backgroundColor: r.scheme[0] === '🔴' ? '#ef4444' : r.scheme[0] === '🟡' ? '#fec53d' : '#3b82f6' 
-                      }} 
-                    />
-                    <div 
-                      className="flex-1" 
-                      style={{ 
-                        backgroundColor: r.scheme[1] === '🔴' ? '#ef4444' : r.scheme[1] === '🟡' ? '#fec53d' : '#3b82f6' 
-                      }} 
-                    />
-                  </div>
+                  <img 
+                    src={r.img} 
+                    alt={r.label} 
+                    className="w-auto h-full max-h-[85px] md:max-h-[105px] object-contain p-0.5 transition-transform group-hover:scale-105"
+                    referrerPolicy="no-referrer"
+                  />
+                  
+                  {/* Matching connector port left dot */}
+                  <div className={`absolute left-[-10px] top-1/2 -translate-y-1/2 w-4.5 h-4.5 rounded-full border-4 border-white shadow transition-all duration-300
+                    ${matched ? 'bg-emerald-500 scale-110 shadow-[0_0_8px_#10B981]' : isTargeting ? 'bg-indigo-300 group-hover:scale-110' : 'bg-slate-300'}
+                  `} />
+
+                  {/* Micro Checked Banner */}
+                  {matched && (
+                    <div className="absolute top-2 right-2 bg-emerald-500 text-white rounded-full p-0.5 shadow-sm scale-90">
+                      <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
                 </button>
               );
             })}
           </div>
 
         </div>
+
       </div>
 
-      {/* Narration Sidebar */}
-      <div className="flex-1 p-6 md:p-8 flex flex-col justify-center bg-white border-l border-slate-200 shadow-xl relative">
-        <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold w-max mb-3">智慧闯关 3</span>
-        <h1 className="text-3xl font-extrabold text-slate-800 mb-4 leading-tight">双色积木对对碰</h1>
-        <p className="text-base text-slate-600 leading-relaxed mb-6 font-sans">
-          摆一摆，连一连。对照左边积木板的图案配色，把左右两半部分的颜色组合相同的连线相连配对！
+      {/* Right control panel sidebar */}
+      <div className="w-full md:w-[30%] bg-[#FFF3E0] rounded-[2.5rem] border-4 border-[#FFE0B2] p-6 md:p-8 flex flex-col justify-between relative shadow-lg min-h-[500px] md:min-h-0 overflow-hidden">
+        
+        {/* Color Palette Heading */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="bg-orange-500 text-white font-black px-6 py-2.5 rounded-2xl shadow-md border-2 border-white tracking-wide text-md text-center">
+            双色积木配配乐 🧩
+          </div>
+          <span className="text-[11px] text-orange-900/60 font-black">第1步：选对称左侧与右侧配色</span>
+        </div>
+
+        {/* Narrative info box */}
+        <p className="text-sm text-amber-900 font-extrabold leading-relaxed text-left bg-orange-100/30 p-4 rounded-2xl border border-orange-200/40 my-4">
+          摆一摆，拼一拼！连一连！请把<b>左边的彩色拥拥球小伙伴</b>同<b>右边完美对应的积木配色</b>连接配对吧！
         </p>
 
-        {complete ? (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3">
-            <CheckCircle2 className="text-emerald-500 w-8 h-8 shrink-0" />
-            <div>
-              <h4 className="font-extrabold text-emerald-800">通过成功！</h4>
-              <p className="text-emerald-600 text-xs">你的积木结构观察力和小布米一样优秀啦！</p>
+        {/* Instructions speech box */}
+        <div className="bg-white text-slate-800 p-4 md:p-5 rounded-[1.8rem] shadow-md border border-orange-100 text-xs md:text-sm font-extrabold leading-relaxed text-left relative my-2">
+          {complete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-3xl animate-bounce">🏆</span>
+              <div>
+                <span className="text-emerald-600 block font-black text-sm">配对积木大功告成！</span>
+                <span className="text-slate-600 font-extrabold text-xs">小朋友配对太正确了，给自己的色彩智慧鼓掌！</span>
+              </div>
             </div>
-          </div>
-        ) : selectedId ? (
-          <div className="p-4 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold animate-pulse">
-            目标：请点击右边对应颜色拼接组合的积木模板！
-          </div>
-        ) : (
-          <div className="p-4 bg-slate-100 border border-slate-200 text-slate-600 text-xs font-bold">
-            步骤：先从左边的双色泡泡彩珠堆里选一串吧！
-          </div>
-        )}
+          ) : (
+            <>
+              <span className="text-orange-600 block mb-1 font-black">💡 智幼大闯关说明：</span>
+              {helperText}
+            </>
+          )}
+          <div className="absolute bottom-[-10px] right-[40px] w-5 h-5 bg-white rotate-45 border-r border-b border-orange-100 pointer-events-none" />
+        </div>
 
-        {/* 再次体验 Replay Button */}
-        <button
-          onClick={handleReset}
-          className="mt-6 w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-md transition active:scale-95 text-sm"
-        >
-          <RefreshCw size={14} className="animate-spin-slow" />
-          再次体验 🔄
-        </button>
+        {/* Reset & Dr. Zhang */}
+        <div className="mt-auto w-full relative h-[140px] flex flex-col justify-end">
+          {/* Replay action bar */}
+          <div className="absolute left-0 bottom-4 w-[55%] z-20">
+            <button
+              onClick={handleReset}
+              className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-black rounded-lg flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 text-xs tracking-wider"
+            >
+              <RefreshCw size={11} className="animate-spin-slow stroke-[3]" />
+              重置积木 🔄
+            </button>
+          </div>
+
+          {/* Dr. Zhang Standing Image */}
+          <img
+            src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%9B%BE%E7%89%87%20%E5%BC%A0%E5%8D%9A%E5%A3%AB.png"
+            alt="张博士"
+            className="w-36 h-auto object-contain absolute bottom-[-1rem] right-[-1.5rem] drop-shadow-[0_15px_15px_rgba(0,0,0,0.25)] select-none pointer-events-none z-10"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
       </div>
+
     </div>
   );
 }

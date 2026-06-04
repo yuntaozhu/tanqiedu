@@ -12,7 +12,7 @@ import {
   ColorIntroScene, LessonSelectorGrid, SubLessonSelector, 
   ForestSearchGame, TreasureBoxGame, AnimalConnectGame, 
   ShapeColoringGame, DoubleColorGame, SpaceStationDragGame, 
-  ColorSudokuGame 
+  ColorSudokuGame, ColorPrepGame
 } from '../components/ColorKingdomGames';
 import {
   ShapeIntroScene, ShapeLessonSelectorGrid, ShapeSubLessonSelector,
@@ -112,6 +112,7 @@ const mockData = [
       { id: "p4_2", type: "level_grid" },
       { id: "p4_3", type: "track_selector" },
       { id: "p4_4", type: "forest_search" },
+      { id: "p4_prep", type: "color_prep" },
       { id: "p4_5", type: "treasure_chest" },
       { id: "p4_6", type: "animal_connect" },
       { id: "p4_7", type: "shape_coloring" },
@@ -626,6 +627,10 @@ export default function Courseware() {
 
               {currentPage.type === 'forest_search' && (
                  <ForestSearchGame />
+              )}
+
+              {currentPage.type === 'color_prep' && (
+                 <ColorPrepGame />
               )}
 
               {currentPage.type === 'treasure_chest' && (
