@@ -274,13 +274,8 @@ export function ForestSearchGame() {
     <div className="w-full h-full bg-slate-50 flex flex-col md:flex-row p-4 md:p-8 select-none gap-6 items-stretch">
       {/* Left Panel: Video Content in Light Green block */}
       <div className="flex-1 md:w-[70%] bg-[#E8F5E9] rounded-[2.5rem] border-4 border-[#C8E6C9] p-6 md:p-10 flex flex-col items-center justify-center relative shadow-lg">
-        {/* Dark Blue Absolute Banner */}
-        <div className="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-[#3F51B5] text-white px-8 py-3.5 rounded-2xl shadow-xl font-bold text-lg md:text-xl border-2 border-[#5C6BC0] z-20 whitespace-nowrap tracking-wide flex items-center gap-2">
-          <span>🎬</span> 视频 见2微课导学视频
-        </div>
-
         {/* Video Player Wrapper */}
-        <div className="relative w-full h-full max-h-[70vh] flex flex-col items-center justify-center mt-4">
+        <div className="relative w-full h-full max-h-[70vh] flex flex-col items-center justify-center">
           <div className="relative w-full h-full flex items-center justify-center rounded-3xl overflow-hidden bg-black/95 shadow-2xl border-4 border-emerald-900/10">
             <video
               key={videoKey}
