@@ -398,9 +398,6 @@ export function ColorPrepGame() {
     audioRef.current = new Audio("https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%8F%96%E6%95%99%E5%85%B7%E9%9F%B3%E4%B9%90.mp3");
     audioRef.current.loop = true;
 
-    // Speak initial intro
-    speakText("小朋友，要开始动手实操啦！请跟着节奏音乐，根据清单准备好这些教具吧！准备好了就点击它们给它们盖上小蜜蜂印章哦！");
-
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -469,152 +466,278 @@ export function ColorPrepGame() {
   };
 
   return (
-    <div className="w-full h-full bg-slate-50 flex flex-col p-4 md:p-8 select-none items-center justify-center">
-      {/* 16:9 Inner Slide Container */}
-      <div className="relative w-full max-w-5xl aspect-video bg-white rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-200">
-        
-        {/* Background Image: the actual template slide */}
-        <img
-          src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P7.png"
-          alt="取教具环节 P7"
-          className="w-full h-full object-contain pointer-events-none select-none"
-          referrerPolicy="no-referrer"
-        />
+    <div className="w-full h-full bg-slate-50 flex flex-col lg:flex-row gap-6 p-4 md:p-6 select-none items-stretch justify-center max-w-7xl mx-auto">
+      {/* Left Panel: Primary interactive board containing full P7 slide display */}
+      <div className="flex-1 relative aspect-video bg-white rounded-3xl overflow-hidden shadow-2xl border-4 border-slate-200">
+        <div className="absolute inset-0">
+          {/* Background Image: the actual template slide, completely contained within the left area with perfect ratio */}
+          <img
+            src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P7.png"
+            alt="取教具环节 P7"
+            className="w-full h-full object-contain select-none pointer-events-none"
+            referrerPolicy="no-referrer"
+          />
 
-        {/* ========================================================= */}
-        {/* INTERACTIVE HOTSPOTS OVERLAID VIA EXACT PERCENTAGES       */}
-        {/* ========================================================= */}
+          {/* Absolute Structured Step Indicators over the visual assets */}
+          <div className="absolute left-[14.2%] top-[17.5%] w-6 h-6 md:w-8 md:h-8 bg-white border-2 border-amber-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 animate-pulse">
+            <span className="text-xs md:text-sm font-black text-amber-600">①</span>
+          </div>
+          <div className="absolute left-[10.5%] top-[44.5%] w-6 h-6 md:w-8 md:h-8 bg-white border-2 border-emerald-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10">
+            <span className="text-xs md:text-sm font-black text-emerald-600">②</span>
+          </div>
+          <div className="absolute left-[37.5%] top-[50.5%] w-6 h-6 md:w-8 md:h-8 bg-white border-2 border-sky-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10">
+            <span className="text-xs md:text-sm font-black text-sky-600">③</span>
+          </div>
 
-        {/* 1. Paint/Splash Area Hotspot */}
-        <div 
-          onClick={() => handleToggleCheck('paint', '红黄蓝三色画笔颜料')}
-          className="absolute left-[14%] top-[16%] w-[41%] h-[23%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-emerald-500/10 border-2 border-transparent hover:border-emerald-500/30"
-          title="点击标记：已准备墨水/颜料"
-        >
-          {checkedItems.paint ? (
-            <motion.div 
-              initial={{ scale: 0, rotate: -15 }}
-              animate={{ scale: 1, rotate: 0 }}
-              className="absolute inset-0 bg-emerald-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-emerald-500/70"
-            >
-              <div className="bg-emerald-600 text-white rounded-full p-2 md:p-3 shadow-xl flex items-center gap-2">
-                <CheckCircle2 size={20} className="animate-bounce" />
-                <span className="font-extrabold text-xs md:text-sm pr-1">颜料准备就绪!</span>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
-              点击准备好的物品 🎯
-            </div>
-          )}
-        </div>
+          {/* ========================================================= */}
+          {/* INTERACTIVE HOTSPOTS OVERLAID VIA EXACT PERCENTAGES       */}
+          {/* ========================================================= */}
 
-        {/* 2. Wooden Base Board Area Hotspot */}
-        <div 
-          onClick={() => handleToggleCheck('board', '实操双色棋盘底板')}
-          className="absolute left-[10%] top-[43%] w-[25%] h-[42%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-teal-500/10 border-2 border-transparent hover:border-teal-500/30"
-          title="点击标记：已准备双色球游戏板"
-        >
-          {checkedItems.board ? (
-            <motion.div 
-              initial={{ scale: 0, rotate: 12 }}
-              animate={{ scale: 1, rotate: 0 }}
-              className="absolute inset-0 bg-teal-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-teal-500/70"
-            >
-              <div className="bg-teal-600 text-white rounded-full p-2 md:p-3 shadow-xl flex items-center gap-2">
-                <CheckCircle2 size={20} className="animate-bounce" />
-                <span className="font-extrabold text-xs md:text-sm pr-1">棋盘准备就绪!</span>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
-              点击准备好的物品 🎯
-            </div>
-          )}
-        </div>
-
-        {/* 3. Cardboard Grids / Paper Area Hotspot */}
-        <div 
-          onClick={() => handleToggleCheck('trays', '九宫格和十连卡纸')}
-          className="absolute left-[37%] top-[49%] w-[20%] h-[31%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-sky-500/10 border-2 border-transparent hover:border-sky-500/30"
-          title="点击标记：已准备九宫数独卡纸与拼搭底卡"
-        >
-          {checkedItems.trays ? (
-            <motion.div 
-              initial={{ scale: 0, rotate: -8 }}
-              animate={{ scale: 1, rotate: 0 }}
-              className="absolute inset-0 bg-sky-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-sky-500/70"
-            >
-              <div className="bg-sky-600 text-white rounded-full p-2 md:p-3 shadow-xl flex items-center gap-2">
-                <CheckCircle2 size={20} className="animate-bounce" />
-                <span className="font-extrabold text-xs md:text-sm pr-1">卡纸准备就绪!</span>
-              </div>
-            </motion.div>
-          ) : (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
-              点击准备好的物品 🎯
-            </div>
-          )}
-        </div>
-
-        {/* 4. Orange Music Action Audio Note (Interactive Play/Pause Hotspot) */}
-        <div 
-          onClick={handleToggleMusic}
-          className="absolute left-[67.3%] top-[78%] w-[5.2%] h-[10%] cursor-pointer rounded-xl flex items-center justify-center bg-transparent group"
-          title="播放/暂停 取教具音乐"
-        >
-          {/* Animated floating notes when music is active */}
-          {isPlaying && (
-            <>
+          {/* 1. Paint/Splash Area Hotspot */}
+          <div 
+            onClick={() => handleToggleCheck('paint', '红黄蓝三色画笔颜料')}
+            className="absolute left-[14%] top-[16%] w-[41%] h-[23%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-emerald-500/10 border-2 border-transparent hover:border-emerald-500/30"
+            title="点击标记：已准备墨水/颜料"
+          >
+            {checkedItems.paint ? (
               <motion.div 
-                animate={{ y: [-15, -45], x: [-10, 5], opacity: [0, 1, 0] }}
-                transition={{ repeat: Infinity, duration: 1.8 }}
-                className="absolute text-orange-500 text-xl font-bold select-none pointer-events-none"
+                initial={{ scale: 0, rotate: -15 }}
+                animate={{ scale: 1, rotate: 0 }}
+                className="absolute inset-0 bg-emerald-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-emerald-500/70"
               >
-                🎵
+                <div className="bg-emerald-600 text-white rounded-full p-1.5 md:p-2.5 shadow-xl flex items-center gap-1.5">
+                  <CheckCircle2 size={16} className="animate-bounce" />
+                  <span className="font-extrabold text-[10px] md:text-xs">颜料准备就绪!</span>
+                </div>
               </motion.div>
-              <motion.div 
-                animate={{ y: [-20, -55], x: [10, -5], opacity: [0, 1, 0] }}
-                transition={{ repeat: Infinity, duration: 2.2, delay: 0.5 }}
-                className="absolute text-amber-500 text-lg font-bold select-none pointer-events-none"
-              >
-                🎶
-              </motion.div>
-              {/* Outer pulsing ring ring indicator */}
-              <div className="absolute inset-[-10px] rounded-2xl border-4 border-orange-500 border-dashed animate-ping opacity-60 pointer-events-none" />
-            </>
-          )}
+            ) : (
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
+                点击准备 🎯
+              </div>
+            )}
+          </div>
 
-          {/* Interactive Toggle Center Button overlaying on top of the note */}
-          <div className={`w-full h-full rounded-2xl flex items-center justify-center transition-all shadow-md group-hover:scale-110 active:scale-95 border-2 ${
-            isPlaying ? 'bg-orange-500 text-white border-white animate-pulse' : 'bg-orange-100/30 border-orange-400 group-hover:bg-orange-400/20'
-          }`}>
-            {isPlaying ? <Pause size={16} className="fill-current text-white" /> : <Play size={16} className="fill-current text-orange-600" />}
+          {/* 2. Wooden Base Board Area Hotspot */}
+          <div 
+            onClick={() => handleToggleCheck('board', '实操双色棋盘底板')}
+            className="absolute left-[10%] top-[43%] w-[25%] h-[42%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-teal-500/10 border-2 border-transparent hover:border-teal-500/30"
+            title="点击标记：已准备双色球游戏板"
+          >
+            {checkedItems.board ? (
+              <motion.div 
+                initial={{ scale: 0, rotate: 12 }}
+                animate={{ scale: 1, rotate: 0 }}
+                className="absolute inset-0 bg-teal-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-teal-500/70"
+              >
+                <div className="bg-teal-600 text-white rounded-full p-1.5 md:p-2.5 shadow-xl flex items-center gap-1.5">
+                  <CheckCircle2 size={16} className="animate-bounce" />
+                  <span className="font-extrabold text-[10px] md:text-xs">棋盘准备就绪!</span>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
+                点击准备 🎯
+              </div>
+            )}
+          </div>
+
+          {/* 3. Cardboard Grids / Paper Area Hotspot */}
+          <div 
+            onClick={() => handleToggleCheck('trays', '九宫格和十连卡纸')}
+            className="absolute left-[37%] top-[49%] w-[20%] h-[31%] cursor-pointer group flex items-center justify-center rounded-2xl transition hover:bg-sky-500/10 border-2 border-transparent hover:border-sky-500/30"
+            title="点击标记：已准备九宫数独卡纸与拼搭底卡"
+          >
+            {checkedItems.trays ? (
+              <motion.div 
+                initial={{ scale: 0, rotate: -8 }}
+                animate={{ scale: 1, rotate: 0 }}
+                className="absolute inset-0 bg-sky-500/15 backdrop-blur-xs flex items-center justify-center rounded-2xl border-4 border-sky-500/70"
+              >
+                <div className="bg-sky-600 text-white rounded-full p-1.5 md:p-2.5 shadow-xl flex items-center gap-1.5">
+                  <CheckCircle2 size={16} className="animate-bounce" />
+                  <span className="font-extrabold text-[10px] md:text-xs">卡纸准备就绪!</span>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md transition-all">
+                点击准备 🎯
+              </div>
+            )}
+          </div>
+
+          {/* 4. Orange Music Action Audio Note (Interactive Play/Pause Hotspot aligned with the visual template asset inside the 16:9 full slide) */}
+          <div 
+            onClick={handleToggleMusic}
+            className="absolute left-[72.2%] top-[78.5%] w-[5.6%] h-[10.5%] cursor-pointer rounded-2xl flex items-center justify-center bg-transparent group z-20"
+            title="播放/暂停 取教具音乐"
+          >
+            {/* Animated floating notes when music is active */}
+            {isPlaying && (
+              <>
+                <motion.div 
+                  animate={{ y: [-15, -45], x: [-10, 5], opacity: [0, 1, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.8 }}
+                  className="absolute text-orange-500 text-xl font-bold select-none pointer-events-none"
+                >
+                  🎵
+                </motion.div>
+                <motion.div 
+                  animate={{ y: [-20, -55], x: [10, -5], opacity: [0, 1, 0] }}
+                  transition={{ repeat: Infinity, duration: 2.2, delay: 0.5 }}
+                  className="absolute text-amber-500 text-lg font-bold select-none pointer-events-none"
+                >
+                  🎶
+                </motion.div>
+                <div className="absolute inset-[-10px] rounded-2xl border-4 border-orange-500 border-dashed animate-ping opacity-60 pointer-events-none" />
+              </>
+            )}
+
+            {/* Interactive Toggle Center Button overlaying on top of the note with absolute fidelity */}
+            <div className={`w-full h-full rounded-2xl flex items-center justify-center transition-all shadow-md group-hover:scale-110 active:scale-95 border-2 ${
+              isPlaying ? 'bg-orange-500 text-white border-white' : 'bg-orange-100/30 border-orange-400 group-hover:bg-orange-400/20'
+            }`}>
+              {isPlaying ? <Pause size={12} className="fill-current text-white" /> : <Play size={12} className="fill-current text-orange-600 animate-pulse" />}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel: Beautiful Dedicated Sidebar for Hands-on interactives and Dr. Zhang */}
+      <div className="w-full lg:w-[28%] bg-sky-50/70 border-4 border-sky-100 rounded-[2rem] p-4 flex flex-col justify-between shadow-xl min-h-[500px] lg:min-h-0 relative shrink-0">
+        <div>
+          {/* Octopus Interactive Header style */}
+          <div className="bg-gradient-to-r from-teal-400 to-cyan-500 rounded-2xl shadow-md border-2 border-white px-4 py-2.5 flex items-center justify-center gap-2 mb-4">
+            <span className="text-xl">🐙</span>
+            <span className="text-white font-extrabold text-sm tracking-widest">实操交互</span>
+          </div>
+
+          <h3 className="text-sky-950 font-black text-sm md:text-base mb-4 leading-relaxed px-1">
+            小朋友，请根据清单点击左边图片，或在下方直接勾选，来准备我们的教具物品吧！
+          </h3>
+
+          {/* Dynamic Sync Checklist */}
+          <div className="space-y-3 mb-4">
+            <button 
+              onClick={() => handleToggleCheck('paint', '红黄蓝三色画笔颜料')}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all active:scale-98 ${
+                checkedItems.paint 
+                  ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800 shadow-xs' 
+                  : 'bg-white border-slate-200 hover:border-sky-300 text-slate-700'
+              }`}
+            >
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 shrink-0 ${
+                checkedItems.paint ? 'bg-emerald-500 border-emerald-600 text-white' : 'border-slate-300 bg-slate-50'
+              }`}>
+                {checkedItems.paint && <CheckCircle2 size={15} className="fill-current text-white" />}
+              </div>
+              <div className="flex-1">
+                <div className="font-extrabold text-xs md:text-sm">① 三色颜料及画笔</div>
+                <div className="text-[10px] text-slate-400 font-bold">对应上方红黄蓝墨水/颜料</div>
+              </div>
+            </button>
+
+            <button 
+              onClick={() => handleToggleCheck('board', '实操双色棋盘底板')}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all active:scale-98 ${
+                checkedItems.board 
+                  ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800 shadow-xs' 
+                  : 'bg-white border-slate-200 hover:border-sky-300 text-slate-700'
+              }`}
+            >
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 shrink-0 ${
+                checkedItems.board ? 'bg-emerald-500 border-emerald-600 text-white' : 'border-slate-300 bg-slate-50'
+              }`}>
+                {checkedItems.board && <CheckCircle2 size={15} className="fill-current text-white" />}
+              </div>
+              <div className="flex-1">
+                <div className="font-extrabold text-xs md:text-sm">② 实操双色棋盘</div>
+                <div className="text-[10px] text-slate-400 font-bold">对应左部多孔木板底盘</div>
+              </div>
+            </button>
+
+            <button 
+              onClick={() => handleToggleCheck('trays', '九宫格和十连卡纸')}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all active:scale-98 ${
+                checkedItems.trays 
+                  ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800 shadow-xs' 
+                  : 'bg-white border-slate-200 hover:border-sky-300 text-slate-700'
+              }`}
+            >
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 shrink-0 ${
+                checkedItems.trays ? 'bg-emerald-500 border-emerald-600 text-white' : 'border-slate-300 bg-slate-50'
+              }`}>
+                {checkedItems.trays && <CheckCircle2 size={15} className="fill-current text-white" />}
+              </div>
+              <div className="flex-1">
+                <div className="font-extrabold text-xs md:text-sm">③ 九宫格十连卡纸</div>
+                <div className="text-[10px] text-slate-400 font-bold">对应中部橘底数独配套卡</div>
+              </div>
+            </button>
+          </div>
+
+          {/* Action music note container aligned beautifully */}
+          <div className="bg-orange-50 rounded-2xl p-3 border border-orange-100 flex items-center gap-3 relative overflow-hidden mb-4">
+            <button 
+              onClick={handleToggleMusic}
+              className={`w-11 h-11 shrink-0 rounded-full flex items-center justify-center shadow-md transition-all active:scale-95 border-2 ${
+                isPlaying ? 'bg-orange-500 text-white border-white' : 'bg-orange-100 border-orange-300 text-orange-600 hover:bg-orange-200'
+              }`}
+              title={isPlaying ? "暂停配乐" : "播放配乐"}
+            >
+              {isPlaying ? <Pause size={18} className="fill-current" /> : <Play size={18} className="fill-current text-orange-600" />}
+            </button>
+            <div className="flex-1 z-10">
+              <div className="font-black text-xs text-orange-900 flex items-center gap-1.5">
+                <span>备课律动音乐</span>
+                {isPlaying && <span className="text-[9px] bg-orange-200 text-orange-850 px-1 py-0.2 rounded-md font-black animate-pulse">播放中</span>}
+              </div>
+              <div className="text-[10px] text-orange-600/90 font-bold mt-0.5">听着轻快音乐更好玩！🎵</div>
+            </div>
+            {isPlaying && (
+              <div className="absolute right-2 bottom-2 flex gap-0.5 items-end h-5 select-none pointer-events-none">
+                <span className="w-0.5 bg-orange-400 h-2 rounded-full animate-bounce [animation-delay:0.1s]" />
+                <span className="w-0.5 bg-orange-300 h-3.5 rounded-full animate-bounce [animation-delay:0.3s]" />
+                <span className="w-0.5 bg-orange-400 h-2.5 rounded-full animate-bounce [animation-delay:0.2s]" />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 5. Speech Bubble for Dr. Zhang's overlay */}
-        <div className="absolute right-[26%] top-[38%] max-w-[200px] pointer-events-auto">
-          <motion.div 
-            key={speechText}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white/95 border border-indigo-200 shadow-xl px-3 py-2 rounded-2xl text-slate-700 font-extrabold text-[10px] md:text-xs text-center relative leading-snug"
-          >
-            {speechText}
-            <div className="absolute -bottom-2 right-4 w-3 h-3 bg-white/95 border-r border-b border-indigo-200 rotate-45" />
-          </motion.div>
-        </div>
+        {/* Bottom portion: Reset layout and Dr. Zhang custom speech balloon */}
+        <div className="mt-auto space-y-3">
+          <div className="flex justify-end pr-1">
+            <button 
+              onClick={handleReset}
+              className="px-2.5 py-1 bg-slate-900/90 hover:bg-slate-900 text-white font-extrabold text-[10px] rounded-lg flex items-center gap-1 shadow-md transition active:scale-95"
+            >
+              <RefreshCw size={8} />
+              重置清单 🔄
+            </button>
+          </div>
 
-        {/* Reset button inside the slide for easy replay */}
-        <div className="absolute right-[4%] top-[4%] z-10">
-          <button 
-            onClick={handleReset}
-            className="px-3 py-1.5 bg-slate-900/80 hover:bg-slate-900 border border-slate-700 text-white font-extrabold text-[10px] rounded-xl flex items-center gap-1 shadow-md transition active:scale-95"
-          >
-            <RefreshCw size={10} />
-            重置清单 🔄
-          </button>
+          <div className="flex items-end gap-3 pt-3 border-t border-sky-100">
+            {/* Dr. Zhang Avatar - Horizontally narrower and slim to give more space */}
+            <div className="w-12 h-16 md:w-14 md:h-18 shrink-0 relative mr-1">
+              <img
+                src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%9B%BE%E7%89%87%20%E5%BC%A0%E5%8D%9A%E5%A3%AB.png"
+                alt="张博士"
+                className="w-full h-full object-contain drop-shadow-md select-none pointer-events-none pb-1"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+            {/* Speech bubble for Dr. Zhang */}
+            <div 
+              onClick={() => speakText(speechText)}
+              className="flex-1 bg-white border border-sky-100 shadow-md p-3 rounded-2xl relative cursor-pointer hover:bg-sky-50/50 transition-all active:scale-98"
+              title="点击播放语音 🔊"
+            >
+              <div className="text-slate-700 font-extrabold text-[11px] md:text-xs leading-relaxed">
+                🔊 {speechText}
+              </div>
+              <span className="text-[9px] text-[#2563EB] font-black block mt-1">(点击听语音)</span>
+              <div className="absolute left-[-6px] bottom-4 w-3 h-3 bg-white border-l border-b border-sky-100 rotate-45" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1023,7 +1146,7 @@ export function ShapeColoringGame() {
   const [helperText, setHelperText] = useState("请先点击右侧彩色颜料溅溅选择画刷，再点击左侧对应黑白结构图到着色连线！");
 
   useEffect(() => {
-    speakText("小朋友，太空大飞机是黄色的，玩具赛车是红色的，蓝色小房子是蓝色的，请在右侧选择对应的颜料，把他们连起来并着色吧！");
+    // Explanation available upon manual click
   }, []);
 
   // Colored references shown at top
@@ -1274,19 +1397,23 @@ export function ShapeColoringGame() {
         </div>
 
         {/* Instructions speech box */}
-        <div className="bg-white text-slate-800 p-4 md:p-5 rounded-[1.8rem] shadow-md border border-orange-100 text-xs md:text-sm font-extrabold leading-relaxed text-left relative my-2">
+        <div 
+          onClick={() => speakText(complete ? "着色连线大功告成！小朋友太厉害了！三组颜料全部对齐连接成功！" : "小朋友，太空大飞机是黄色的，玩具赛车是红色的，蓝色小房子是蓝色的，请在右侧选择对应的颜料，把他们连起来并着色吧！")}
+          className="bg-white hover:bg-orange-50/50 cursor-pointer text-slate-800 p-4 md:p-5 rounded-[1.8rem] shadow-md border border-orange-100 text-xs md:text-sm font-extrabold leading-relaxed text-left relative my-2 transition-all hover:scale-101 active:scale-99"
+          title="点击听说明语音 🔊"
+        >
           {complete ? (
             <div className="flex items-center gap-2">
               <span className="text-3xl animate-bounce">🏆</span>
               <div>
-                <span className="text-emerald-600 block font-black text-sm">着色连线大功告成！</span>
+                <span className="text-emerald-600 block font-black text-sm">着色连线大功告成！🔊</span>
                 <span className="text-slate-600 font-extrabold text-xs">小朋友太厉害了！三组颜料全部对齐连接成功！</span>
               </div>
             </div>
           ) : (
             <>
-              <span className="text-orange-600 block mb-1 font-black">💡 智幼大闯关说明：</span>
-              {helperText}
+              <span className="text-orange-600 block mb-1 font-black">💡 智幼大闯关说明 (点击听语音) 🔊：</span>
+              <span className="text-slate-700 block">{helperText}</span>
             </>
           )}
           <div className="absolute bottom-[-10px] right-[40px] w-5 h-5 bg-white rotate-45 border-r border-b border-orange-100 pointer-events-none" />
@@ -1329,7 +1456,7 @@ export function DoubleColorGame() {
   const [helperText, setHelperText] = useState("请先点击左侧两两拥抱的彩色泡泡宝宝，然后找出右侧颜色搭配相同的双色积木来完成着色连线吧！");
 
   useEffect(() => {
-    speakText("小朋友，瞧，左边是颜色王国最亲密的拥拥泡泡组合，右边是双色积木板。请选择两边颜色互相对应的一组，把它们连接起来吧！");
+    // Guide available on manual click
   }, []);
 
   const columnLeft = [
@@ -1419,32 +1546,19 @@ export function DoubleColorGame() {
             {columnLeft.map((item) => {
               const matched = correctFlags[item.id] !== undefined;
               const { y1, y2 } = getLineCoordinates(item.id);
-              const isSelected = selectedId === item.id;
 
               return (
                 <g key={item.id}>
-                  {/* Subtle trace background trace line */}
-                  <line 
-                    x1="38%" 
-                    y1={y1} 
-                    x2="62%" 
-                    y2={y2} 
-                    stroke={matched ? (item.id === 1 ? '#EF4444' : item.id === 2 ? '#3B82F6' : item.id === 3 ? '#10B981' : '#F59E0B') : '#E2E8F0'} 
-                    strokeWidth={matched ? '5' : '3'} 
-                    strokeDasharray={matched ? undefined : '5,5'}
-                    opacity={matched ? 1 : 0.45}
-                    className="transition-all duration-300"
-                  />
-                  {isSelected && (
+                  {/* Only render line when matched successfully */}
+                  {matched && (
                     <line 
                       x1="38%" 
                       y1={y1} 
                       x2="62%" 
                       y2={y2} 
-                      stroke="#818CF8" 
-                      strokeWidth="3.5" 
-                      strokeDasharray="6,4"
-                      className="animate-marquee opacity-80"
+                      stroke={item.id === 1 ? '#EF4444' : item.id === 2 ? '#3B82F6' : item.id === 3 ? '#10B981' : '#F59E0B'} 
+                      strokeWidth="5" 
+                      className="transition-all duration-350"
                     />
                   )}
                 </g>
@@ -1569,19 +1683,23 @@ export function DoubleColorGame() {
         </p>
 
         {/* Instructions speech box */}
-        <div className="bg-white text-slate-800 p-4 md:p-5 rounded-[1.8rem] shadow-md border border-orange-100 text-xs md:text-sm font-extrabold leading-relaxed text-left relative my-2">
+        <div 
+          onClick={() => speakText(complete ? "配对积木大功告成！小朋友配对太正确了，给自己的色彩智慧鼓掌！" : "小朋友，瞧，左边是颜色王国最亲密的拥拥泡泡组合，右边是双色积木板。请选择两边颜色互相对应的一组，把它们连接起来吧！")}
+          className="bg-white hover:bg-orange-50/50 cursor-pointer text-slate-800 p-4 md:p-5 rounded-[1.8rem] shadow-md border border-orange-100 text-xs md:text-sm font-extrabold leading-relaxed text-left relative my-2 transition-all hover:scale-101 active:scale-99"
+          title="点击听说明语音 🔊"
+        >
           {complete ? (
             <div className="flex items-center gap-2">
               <span className="text-3xl animate-bounce">🏆</span>
               <div>
-                <span className="text-emerald-600 block font-black text-sm">配对积木大功告成！</span>
+                <span className="text-emerald-600 block font-black text-sm">配对积木大功告成！🔊</span>
                 <span className="text-slate-600 font-extrabold text-xs">小朋友配对太正确了，给自己的色彩智慧鼓掌！</span>
               </div>
             </div>
           ) : (
             <>
-              <span className="text-orange-600 block mb-1 font-black">💡 智幼大闯关说明：</span>
-              {helperText}
+              <span className="text-orange-600 block mb-1 font-black">💡 智幼大闯关说明 (点击听语音) 🔊：</span>
+              <span className="text-slate-700 block">{helperText}</span>
             </>
           )}
           <div className="absolute bottom-[-10px] right-[40px] w-5 h-5 bg-white rotate-45 border-r border-b border-orange-100 pointer-events-none" />

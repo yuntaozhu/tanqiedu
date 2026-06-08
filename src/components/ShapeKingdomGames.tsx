@@ -73,7 +73,7 @@ const speakText = (text: string) => {
 // ==========================================
 export function ShapeIntroScene({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
-    speakText("欢迎来到形状王国！让我们一起开启奇妙的几何探秘之旅，发现藏在身边的各种形状吧！");
+    // Explanation available upon manual click
   }, []);
 
   return (
@@ -108,9 +108,14 @@ export function ShapeIntroScene({ onComplete }: { onComplete: () => void }) {
         <h1 className="text-5xl md:text-6xl font-black bg-gradient-to-r from-sky-400 via-purple-300 to-amber-400 bg-clip-text text-transparent mb-6 tracking-tight drop-shadow">
           几何图形记
         </h1>
-        <p className="text-lg text-slate-300 leading-relaxed mb-8">
-          欢迎小朋友们来到神奇的【几何形状王国】！
-          在这里，三角形、圆形、正方形都变成了奇妙的道具。好玩的形状寻宝、太空拼搭和数独谜题正等待你来探索！
+        <p 
+          onClick={() => speakText("欢迎来到形状王国！让我们一起开启奇妙的几何探秘之旅，发现藏在身边的各种形状吧！")}
+          className="text-lg text-slate-300 leading-relaxed mb-8 cursor-pointer hover:text-white transition-colors"
+          title="点击听语音说明 🔊"
+        >
+          欢迎小朋友们来到神奇的【几何形状王国】！ 🔊
+          <br/>
+          <span className="text-xs text-purple-400 block mt-2">(点击此处听语音说明)</span>
         </p>
         
         <button 
@@ -272,7 +277,7 @@ export function ShapeForestSearchGame() {
   ];
 
   useEffect(() => {
-    speakText("请你在美丽的丛林中，点一点，找出藏在各处的五种几何形状物体吧！");
+    // Audio guide plays on clicking the instructions banner below
   }, []);
 
   const handleReveal = (index: number) => {
@@ -378,9 +383,13 @@ export function ShapeForestSearchGame() {
           })}
 
           {/* Prompt banner bottom */}
-          <div className="absolute bottom-4 inset-x-0 mx-auto w-fit bg-slate-900/90 border border-purple-500/30 px-5 py-2.5 rounded-full shadow-lg text-xs md:text-sm text-center text-slate-200 backdrop-blur-md flex items-center gap-2">
+          <div 
+            onClick={() => speakText("请你在美丽的丛林中，点一点，找出藏在各处的五种几何形状物体吧！")}
+            className="absolute bottom-4 inset-x-0 mx-auto w-fit bg-slate-900/90 border border-purple-500/30 px-5 py-2.5 rounded-full shadow-lg text-xs md:text-sm text-center text-slate-200 backdrop-blur-md flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95 transition-all"
+            title="点击听语音指示 🔊"
+          >
             <span className="w-2 h-2 rounded-full bg-purple-500 animate-ping" />
-            <span>小指示：动动小手，在森林里找出带有 <b>圆形、三角形、正方形</b> 的神奇物品吧！</span>
+            <span>小指示 (点击听语音) 🔊：动动小手，在森林里找出带有 <b>圆形、三角形、正方形</b> 的神奇物品吧！</span>
           </div>
 
           {/* Final Congratulations Modal overlaid on forest */}
@@ -462,7 +471,6 @@ export function ShapeMagicChestGame() {
     setCurrentIndex(0);
     setComplete(false);
     setStats({ correct: 0, total: 0 });
-    speakText("形状分拣魔法箱来啦！请看箱子冒出来的是什么物品，把它送入对应的形状传送门里面吧！");
   }, []);
 
   const handleSort = (chosenShape: 'circle' | 'triangle' | 'square') => {
@@ -513,7 +521,13 @@ export function ShapeMagicChestGame() {
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <span className="bg-indigo-600 text-white font-bold px-3 py-1 rounded-full text-xs">实操课时 02-2</span>
-            <h2 className="text-xl font-extrabold text-white">魔法箱分类整理</h2>
+            <h2 
+              className="text-xl font-extrabold text-white cursor-pointer hover:text-indigo-400 active:scale-95 transition-all flex items-center gap-1"
+              onClick={() => speakText("形状分拣魔法箱来啦！请看箱子冒出来的是什么物品，把它送入对应的形状传送门里面吧！")}
+              title="点击听语音 🔊"
+            >
+              魔法箱分类整理 🔊
+            </h2>
           </div>
           
           <div className="flex gap-4 items-center">
@@ -669,7 +683,7 @@ export function ShapeAnimalConnectGame() {
   ];
 
   useEffect(() => {
-    speakText("三个可爱的小动物想要拿回属于它们的特定形状护盾！请先点一个小动物，然后再点击它所期盼的形状盾牌，帮它们守护自己吧！");
+    // Instruction plays on manual title click
   }, []);
 
   const handleAnimalClick = (animalId: number) => {
@@ -721,7 +735,13 @@ export function ShapeAnimalConnectGame() {
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-800/80">
           <div className="flex items-center gap-2">
             <span className="bg-purple-600 text-white font-bold px-3 py-1 rounded-full text-xs">实操课时 02-3</span>
-            <h2 className="text-xl font-extrabold text-white">守护者形状配对</h2>
+            <h2 
+              className="text-xl font-extrabold text-white cursor-pointer hover:text-purple-450 active:scale-95 transition-all flex items-center gap-1"
+              onClick={() => speakText("三个可爱的小动物想要拿回属于它们的特定形状护盾！请先点一个小动物，然后再点击它所期盼的形状盾牌，帮它们守护自己吧！")}
+              title="点击听语音 🔊"
+            >
+              守护者形状配对 🔊
+            </h2>
           </div>
           <div className="text-xs text-slate-400 bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-full font-bold">
             匹配进度: {Object.keys(connections).length} / {animals.length}
@@ -881,7 +901,7 @@ export function ShapeColoringGame() {
   ];
 
   useEffect(() => {
-    speakText("形状魔法填色来啦！请看最下方的三个魔力画笔（圆形画笔、三角形画笔和正方形画笔）。选一把画笔，然后轻轻点在白板上形状相同的轮廓中，给它注入美丽的魔法色彩吧！");
+    // Guide plays on manual title click
   }, []);
 
   const handleShapeClick = (shapeType: 'circle' | 'triangle' | 'square', shapeId: string, shapeSound: string) => {
@@ -921,7 +941,13 @@ export function ShapeColoringGame() {
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <span className="bg-purple-600 text-white font-bold px-3 py-1 rounded-full text-xs">实操课时 02-4</span>
-            <h2 className="text-xl font-extrabold text-white">图形色彩填染</h2>
+            <h2 
+              className="text-xl font-extrabold text-white cursor-pointer hover:text-purple-450 active:scale-95 transition-all flex items-center gap-1"
+              onClick={() => speakText("形状魔法填色来啦！请看最下方的三个魔力画笔（圆形画笔、三角形画笔和正方形画笔）。选一把画笔，然后轻轻点在白板上形状相同的轮廓中，给它注入美丽的魔法色彩吧！")}
+              title="点击听语音 🔊"
+            >
+              图形色彩填染 🔊
+            </h2>
           </div>
           <div className="text-xs text-indigo-400 font-bold bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-full flex items-center gap-1">
             <PenTool size={12} />
@@ -1119,7 +1145,6 @@ export function ShapeBuildingBlocksGame() {
     setPlacedParts({});
     setSelectedBlockId(null);
     setComplete(false);
-    speakText(`太空建筑大拼搭来啦！我们今天拼装【${currentBp.title}】。请先点击底部的几何积木模块，然后再点白板上带虚线的灰色对应槽位，来进行完美组装吧！`);
   }, [activeBlueprintId]);
 
   const handleBlockSelection = (partId: string, partShape: string) => {
@@ -1169,7 +1194,13 @@ export function ShapeBuildingBlocksGame() {
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 pb-3 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <span className="bg-orange-500 text-white font-bold px-3 py-1 rounded-full text-xs">实战大作 02-5</span>
-            <h2 className="text-xl font-extrabold text-white">3D 创意图形拼搭</h2>
+            <h2 
+              className="text-xl font-extrabold text-white cursor-pointer hover:text-orange-400 active:scale-95 transition-all flex items-center gap-1"
+              onClick={() => speakText(`太空建筑大拼搭来啦！我们今天拼装【${currentBp.title}】。请先点击底部的几何积木模块，然后再点白板上带虚线的灰色对应槽位，来进行完美组装吧！`)}
+              title="点击听语音 🔊"
+            >
+              3D 创意图形拼搭 🔊
+            </h2>
           </div>
           
           <div className="flex gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 self-start">
@@ -1350,7 +1381,6 @@ export function ShapeSudokuGame() {
     });
     setComplete(false);
     setErrorCells([]);
-    speakText("形状九宫格终极挑战来啦！这是一个高级几何逻辑数独。有些格子藏有圆形、三角形和正方形。在空出的格子里，放上合适的形状，让每一横排、每一竖列都没有重复！");
   }, []);
 
   const handleSelectShape = (index: number, shape: ShapeType) => {
@@ -1440,7 +1470,13 @@ export function ShapeSudokuGame() {
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-indigo-950">
           <div className="flex items-center gap-2">
             <span className="bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded-full text-xs">玩玩屋 02-6</span>
-            <h2 className="text-xl font-extrabold text-white">智慧九宫格数独</h2>
+            <h2 
+              className="text-xl font-extrabold text-white cursor-pointer hover:text-amber-400 active:scale-95 transition-all flex items-center gap-1"
+              onClick={() => speakText("形状九宫格终极挑战来啦！这是一个高级几何逻辑数独。有些格子藏有圆形、三角形和正方形。在空出的格子里，放上合适的形状，让每一横排、每一竖列都没有重复！")}
+              title="点击听语音 🔊"
+            >
+              智慧九宫格数独 🔊
+            </h2>
           </div>
           
           <div className="flex items-center gap-1.5">
