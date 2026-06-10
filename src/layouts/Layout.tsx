@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Rocket, Sparkles, MonitorPlay, Bot } from 'lucide-react';
+import { Rocket, Sparkles, MonitorPlay, Bot, Wand2 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -14,6 +14,7 @@ export default function Layout() {
   const links = [
     { name: '首页', path: '/', icon: Rocket },
     { name: 'AI创造工具', path: '/tools', icon: Sparkles },
+    { name: 'AI课件制作', path: '/courseware-maker', icon: Wand2 },
     { name: 'AI课件工具', path: '/courseware', icon: MonitorPlay },
     { name: '产品中心', path: '/products', icon: Bot },
   ];

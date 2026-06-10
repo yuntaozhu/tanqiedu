@@ -3,6 +3,7 @@ import Layout from './layouts/Layout';
 import Home from './pages/Home';
 import Tools from './pages/Tools';
 import Courseware from './pages/Courseware';
+import CoursewareMaker from './pages/CoursewareMaker';
 import Products from './pages/Products';
 
 export default function App() {
@@ -12,6 +13,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="tools" element={<Tools />} />
         <Route path="courseware" element={<Courseware />} />
+        <Route path="courseware-maker" element={<CoursewareMaker />} />
         <Route path="products" element={<Products />} />
       </Route>
     </Routes>
