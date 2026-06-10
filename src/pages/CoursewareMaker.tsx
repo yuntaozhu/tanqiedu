@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Wand2, Sparkles, UploadCloud, Mic, Square, Volume2, Play, Pause,
   Plus, Trash2, Settings2, Code2, Cpu, CheckCircle2, Radio, FileText,
-  LayoutGrid, ChevronRight, AlertCircle, RefreshCw, Layers
+  LayoutGrid, ChevronRight, AlertCircle, RefreshCw, Layers, Gamepad2, Trophy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -41,7 +41,7 @@ interface Hotspot {
 
 export default function CoursewareMaker() {
   // Navigation tabs
-  const [activeTab, setActiveTab] = useState<'plan' | 'assets' | 'hotspots' | 'compile'>('plan');
+  const [activeTab, setActiveTab] = useState<'plan' | 'assets' | 'hotspots' | 'game' | 'compile'>('plan');
 
   // Step 1: Course Info
   const [courseTitle, setCourseTitle] = useState('红黄蓝配对大闯关');
@@ -87,6 +87,22 @@ export default function CoursewareMaker() {
     { id: 'h3', name: '③ 九宫十连卡纸', top: '49%', left: '37%', width: '20%', height: '31%', desc: '点击代表卡纸和数独任务牌对齐' },
   ]);
   const [activeHotspotId, setActiveHotspotId] = useState<string | null>(null);
+
+  // Step 3.5: Dynamic Game Design & Engine Variables
+  const [gameTitle, setGameTitle] = useState('红黄蓝色彩对准大消除');
+  const [gameType, setGameType] = useState<'match' | 'eliminate' | 'sequence'>('match');
+  const [gameDifficulty, setGameDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
+  const [gameThought, setGameThought] = useState(
+    '1. 【具身实操反馈】：幼儿通过点击棋具（多孔板），将虚拟色球归类到正确的色彩坑道上，加深三原色触觉反馈与对比。\n2. 【游戏心理闭环】：色球随机掉落，限时30秒。每准确对准一个获得“闪烁星星”和清脆的“哆”和弦声，达成3连击获得张博士的语音赞美！'
+  );
+  const [gameTimerSec, setGameTimerSec] = useState(30);
+
+  // Dynamic game playground state in live preview Sandbox
+  const [previewActiveEngine, setPreviewActiveEngine] = useState<'p7_ready' | 'gamified_play'>('p7_ready');
+  const [playScore, setPlayScore] = useState(0);
+  const [playTargetColor, setPlayTargetColor] = useState<'red' | 'yellow' | 'blue'>('red');
+  const [playFeedbackText, setPlayFeedbackText] = useState('游戏已就绪！观察顶部的目标气泡色彩，点击下方的消降色孔进行具身对准消除吧！');
+  const [playStreak, setPlayStreak] = useState(0);
 
   // Step 4: Coding AI config & CodeGen Simulation
   const [selectedModel, setSelectedModel] = useState<'gemini' | 'doubao'>('gemini');
@@ -243,6 +259,9 @@ export default function CoursewareMaker() {
       `⚡ [素材装载] 解析 P7.png (教学备包图)：分辨率 16:9 比例校验正确...`,
       `⚡ [素材装载] 实装配音序列：已成功检索语音包 ${voiceOverList.length} 段...`,
       `⚡ [热区判定] ${aiHotspotEnabled ? '已开启 CV 智能形状识别。热区坐标高保真映射中...' : '使用传统相对热区绑定...'}`,
+      `⚡ [游戏设计装配] 读取游戏化课程设计方案：“${gameTitle}”...`,
+      `⚡ [游戏设计装配] 配置玩法模式：${gameType === 'match' ? '具身三色对准配对' : (gameType === 'eliminate' ? '多孔物理卡槽消除' : '律动空位颜色对准')} (${gameDifficulty === 'easy' ? '启蒙级' : (gameDifficulty === 'normal' ? '标准级' : '挑战级')})`,
+      `⚡ [游戏设计装配] 封装益智声效和物理晃动渲染。绑定大满贯彩蛋特效与 SpeechSynthesis 动态语音赞赏机制...`,
       `🤖 [模型调用] 正在连线 ${selectedModel === 'gemini' ? 'Google Gemini 1.5 Pro' : '字节跳动 Doubao-PRO'} 代码生成中继服务器...`,
       '🤖 [AI Agent] 正在根据教师意图和额外指令自动生成 React + Next.js TSX 模板...',
       '🤖 [AI Agent] 注入 React 核心 Hooks：配置 activeId 及 p7CheckedItems 反应流...',
@@ -276,34 +295,105 @@ export default function CoursewareMaker() {
 
   const generateMockComponentCode = () => {
     return `// 由探奇 AI 课件工具自动生成
-// 教师意图: ${courseTitle} (${targetAge})
+// 教师大纲: ${courseTitle} (${targetAge})
+// 游戏设计方案: ${gameTitle}
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Play, Pause, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Play, Pause, RefreshCw, Gamepad2, Trophy, HelpCircle } from 'lucide-react';
 
 export default function GeneratedCourseware() {
+  const [activeTab, setActiveTab] = useState<'checklist' | 'game'>('checklist');
   const [checked, setChecked] = useState({ paint: false, board: false, trays: false });
-  const [audioActive, setAudioActive] = useState(false);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [targetColor, setTargetColor] = useState<'red' | 'yellow' | 'blue'>('red');
+  const [feedback, setFeedback] = useState('请找出对应的彩色孔位投掷！');
+
+  const colors = ['red', 'yellow', 'blue'] as const;
+
+  const handleMatch = (selected: 'red' | 'yellow' | 'blue') => {
+    if (selected === targetColor) {
+      setScore(s => s + 10);
+      setStreak(st => st + 1);
+      const nextTarget = colors.filter(c => c !== targetColor)[Math.floor(Math.random() * 2)];
+      setTargetColor(nextTarget);
+      setFeedback('对准匹配成功！加10分！🎉');
+    } else {
+      setStreak(0);
+      setFeedback('匹配不正确哦，请仔细观察目标颜色。');
+    }
+  };
 
   return (
-    <div className="w-full h-full bg-slate-50 flex flex-col md:flex-row gap-6 p-6">
-      {/* 完整 16:9 比例的自适应交互图 */}
-      <div className="flex-1 relative aspect-video bg-white rounded-3xl overflow-hidden shadow-xl border">
-        <img src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P7.png" className="w-full h-full object-contain" />
-        
-        {/* 精确热区叠加 */}
-        <div onClick={() => setChecked(c => ({...c, paint: true}))} 
-             className="absolute left-[14%] top-[16%] w-[41%] h-[23%] cursor-pointer border border-dashed border-emerald-400 group hover:bg-emerald-500/10 rounded-xl" />
-        <div onClick={() => setChecked(c => ({...c, board: true}))} 
-             className="absolute left-[10%] top-[43%] w-[25%] h-[42%] cursor-pointer border border-dashed border-teal-400 group hover:bg-teal-500/10 rounded-xl" />
-        <div onClick={() => setChecked(c => ({...c, trays: true}))} 
-             className="absolute left-[37%] top-[49%] w-[20%] h-[31%] cursor-pointer border border-dashed border-sky-400 group hover:bg-sky-500/10 rounded-xl" />
+    <div className="w-full max-w-4xl mx-auto p-4 bg-slate-50 rounded-3xl border shadow-sm">
+      <div className="flex gap-2 justify-center mb-4">
+        <button 
+          onClick={() => setActiveTab('checklist')}
+          className={\`px-4 py-2 rounded-xl text-xs font-black transition-all \${activeTab === 'checklist' ? 'bg-blue-600 text-white shadow' : 'bg-white text-slate-600 border'}\`}
+        >
+          🛠️ 实操教具清点 (P7)
+        </button>
+        <button 
+          onClick={() => setActiveTab('game')}
+          className={\`px-4 py-2 rounded-xl text-xs font-black transition-all \${activeTab === 'game' ? 'bg-indigo-650 text-white shadow' : 'bg-white text-slate-600 border'}\`}
+        >
+          🎮 ${gameTitle} (消除匹配游戏)
+        </button>
       </div>
-      
-      {/* 极简右侧老师辅导舱 */}
-      <div className="w-full md:w-80 bg-white shadow-md rounded-3xl p-6 flex flex-col justify-between">
-        ...
-      </div>
+
+      {activeTab === 'checklist' ? (
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          <div className="md:col-span-8 relative aspect-video bg-white rounded-2xl overflow-hidden border">
+            <img src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P7.png" className="w-full h-full object-contain" />
+          </div>
+          <div className="md:col-span-4 bg-sky-50 rounded-2xl p-4 flex flex-col justify-between">
+            <h4 className="text-xs font-bold text-slate-800">1. 实操清单清点核对</h4>
+            <div className="space-y-2 mt-2">
+              <button 
+                onClick={() => setChecked(c => ({...c, paint: !c.paint}))}
+                className={\`w-full p-2 rounded-lg border text-xs font-bold text-left \${checked.paint ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-white border-slate-200'}\`}
+              >
+                ① 三色笔及颜料 {checked.paint ? '✅' : '⏳'}
+              </button>
+              <button 
+                onClick={() => setChecked(c => ({...c, board: !c.board}))}
+                className={\`w-full p-2 rounded-lg border text-xs font-bold text-left \${checked.board ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-white border-slate-200'}\`}
+              >
+                ② 实操双色棋盘 {checked.board ? '✅' : '⏳'}
+              </button>
+              <button 
+                onClick={() => setChecked(c => ({...c, trays: !c.trays}))}
+                className={\`w-full p-2 rounded-lg border text-xs font-bold text-left \${checked.trays ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-white border-slate-200'}\`}
+              >
+                ③ 九宫十连卡纸 {checked.trays ? '✅' : '⏳'}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-4">满足3-6岁色彩具身空间教育。</p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-slate-900 rounded-2xl p-6 text-white text-center flex flex-col items-center">
+          <h3 className="text-md font-bold tracking-wider text-yellow-300">${gameTitle}</h3>
+          
+          <div className="my-6">
+            <span className="text-[10px] text-slate-400 block mb-1">当前匹配色彩目标</span>
+            <div className={\`px-4 py-2 rounded-full text-xs font-black inline-block \${targetColor === 'red' ? 'bg-red-500' : targetColor === 'yellow' ? 'bg-amber-400 text-slate-950' : 'bg-blue-600'}\`}>
+              {targetColor === 'red' ? '🔴 红色' : targetColor === 'yellow' ? '🟡 黄色' : '🔵 蓝色'}
+            </div>
+          </div>
+
+          <div className="flex gap-4 justify-center my-4">
+            <button onClick={() => handleMatch('red')} className="px-4 py-2 bg-red-650 hover:bg-red-500 text-xs font-bold rounded-lg shadow-lg">红孔</button>
+            <button onClick={() => handleMatch('yellow')} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-lg">黄孔</button>
+            <button onClick={() => handleMatch('blue')} className="px-4 py-2 bg-blue-650 hover:bg-blue-500 text-xs font-bold rounded-lg shadow-lg">蓝孔</button>
+          </div>
+
+          <div className="flex justify-between w-full mt-6 text-xs text-slate-400 border-t border-white/10 pt-3">
+            <span>🏆 当前得分: {score}</span>
+            <span>🔥 连击数: {streak}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }`;
@@ -328,6 +418,42 @@ export default function GeneratedCourseware() {
       }
       return next;
     });
+  };
+
+  const handleCheckPlayGame = (selectedColor: 'red' | 'yellow' | 'blue') => {
+    if (selectedColor === playTargetColor) {
+      const nextScore = playScore + 10;
+      setPlayScore(nextScore);
+      const nextStreak = playStreak + 1;
+      setPlayStreak(nextStreak);
+      
+      const colors = ['red', 'yellow', 'blue'] as const;
+      const filtered = colors.filter(c => c !== playTargetColor);
+      const randomNext = filtered[Math.floor(Math.random() * filtered.length)];
+      setPlayTargetColor(randomNext);
+      
+      setPlayFeedbackText(`对准配对成功！🎉 成绩累计 +10分 ${nextStreak > 1 ? `（达成 ${nextStreak} 连消🔥）` : ''}`);
+
+      if (nextStreak % 3 === 0) {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          colors: ['#EF4444', '#F59E0B', '#3B82F6']
+        });
+        setP7SpeakText(`太厉害啦！你在游戏《${gameTitle}》中连续消除配对了 ${nextStreak} 个色彩！你是色彩空间操作专家！继续保持吧！`);
+      } else {
+        const encouragement = [
+          '找对色孔啦，快速消除一个！',
+          '太棒了，这就是匹配的颜色！',
+          '真厉害，彩杯配对正确！',
+        ];
+        setP7SpeakText(encouragement[Math.floor(Math.random() * encouragement.length)]);
+      }
+    } else {
+      setPlayStreak(0);
+      setPlayFeedbackText(`糟糕，对准失败！${selectedColor === 'red' ? '红色' : selectedColor === 'yellow' ? '黄色' : '蓝色'}孔对准失准，这不匹配哦。再看看？😅`);
+      setP7SpeakText(`噢，这好像是${selectedColor === 'red' ? '红' : selectedColor === 'yellow' ? '黄' : '蓝'}色孔呢，匹配失败。当前的消除匹配的目标是：${playTargetColor === 'red' ? '红' : playTargetColor === 'yellow' ? '黄' : '蓝'}色！`);
+    }
   };
 
   const handleToggleBgm = () => {
@@ -415,39 +541,48 @@ export default function GeneratedCourseware() {
           <div className="bg-slate-50 border-b border-slate-200 p-2 flex gap-1 justify-start">
             <button 
               onClick={() => setActiveTab('plan')}
-              className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-1 rounded-xl text-xs font-black transition-all ${
+              className={`flex-1 min-w-[90px] flex items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl text-[10px] font-black transition-all ${
                 activeTab === 'plan' ? 'bg-white text-blue-600 shadow-md border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <FileText size={15} />
+              <FileText size={14} />
               1. 教学大纲策划
             </button>
             <button 
               onClick={() => setActiveTab('assets')}
-              className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-1 rounded-xl text-xs font-black transition-all ${
+              className={`flex-1 min-w-[90px] flex items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl text-[10px] font-black transition-all ${
                 activeTab === 'assets' ? 'bg-white text-blue-600 shadow-md border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <Layers size={15} />
+              <Layers size={14} />
               2. 素材与配音库
             </button>
             <button 
               onClick={() => setActiveTab('hotspots')}
-              className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-1 rounded-xl text-xs font-black transition-all ${
+              className={`flex-1 min-w-[90px] flex items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl text-[10px] font-black transition-all ${
                 activeTab === 'hotspots' ? 'bg-white text-blue-600 shadow-md border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <LayoutGrid size={15} />
+              <LayoutGrid size={14} />
               3. 交互与热区
             </button>
             <button 
+              onClick={() => setActiveTab('game')}
+              className={`flex-1 min-w-[90px] flex items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl text-[10px] font-black transition-all ${
+                activeTab === 'game' ? 'bg-white text-blue-600 shadow-md border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Gamepad2 size={14} className="text-indigo-500" />
+              4. 游戏设计方案
+            </button>
+            <button 
               onClick={() => setActiveTab('compile')}
-              className={`flex-1 min-w-[100px] flex items-center justify-center gap-2 py-3 px-1 rounded-xl text-xs font-black transition-all ${
+              className={`flex-1 min-w-[90px] flex items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl text-[10px] font-black transition-all ${
                 activeTab === 'compile' ? 'bg-white text-blue-600 shadow-md border-b-2 border-blue-500' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <Cpu size={15} />
-              4. 大模型代码装配
+              <Cpu size={14} />
+              5. 代码自动装配
             </button>
           </div>
 
@@ -862,6 +997,107 @@ export default function GeneratedCourseware() {
                 </motion.div>
               )}
 
+              {/* Tab 4: Game Design Settings */}
+              {activeTab === 'game' && (
+                <motion.div 
+                  key="game_tab"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-4 flex-1 text-left"
+                >
+                  <div className="bg-gradient-to-tr from-indigo-500/10 via-blue-500/10 to-cyan-500/10 p-4 border border-indigo-200/60 rounded-[2rem] space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-indigo-500 text-white rounded-xl">
+                        <Gamepad2 size={18} className="animate-pulse" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-slate-800">游戏互动式具身课件设计舱</h4>
+                        <p className="text-[10px] text-slate-500 leading-normal">
+                          在您的物理底纸之外动态生成并装配一款富有益智闭环、极佳反馈动效的红黄蓝游戏。
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">游戏交互课件标题</label>
+                        <input 
+                          type="text" 
+                          value={gameTitle} 
+                          onChange={(e) => setGameTitle(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold bg-slate-50 focus:bg-white focus:ring-1 focus:ring-indigo-400 outline-none transition"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">游戏核心模式</label>
+                          <select 
+                            value={gameType}
+                            onChange={(e) => setGameType(e.target.value as any)}
+                            className="w-full text-[10px] font-extrabold px-2 py-1.5 rounded-lg border border-slate-200 bg-white focus:outline-none"
+                          >
+                            <option value="match">🔴🟡🔵 具身三色对准消</option>
+                            <option value="eliminate">🎲 多孔卡槽遮罩投</option>
+                            <option value="sequence">⏱️ 限时原色律动排</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">倒计时设定 (秒)</label>
+                          <input 
+                            type="number"
+                            value={gameTimerSec}
+                            onChange={(e) => setGameTimerSec(Number(e.target.value))}
+                            className="w-full px-2 py-1 bg-slate-50 border border-slate-200 text-[10px] font-bold rounded-lg"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">关卡机制与判断门槛</label>
+                        <div className="flex gap-1.5 mt-1">
+                          {(['easy', 'normal', 'hard'] as const).map((diff) => (
+                            <button 
+                              key={diff}
+                              onClick={() => setGameDifficulty(diff)}
+                              className={`flex-1 py-1 px-1 rounded-xl text-[9px] font-bold transition border ${
+                                gameDifficulty === diff 
+                                  ? 'bg-blue-600 text-white border-blue-650 shadow-sm' 
+                                  : 'bg-slate-50 text-slate-650 border-slate-200 hover:bg-slate-100'
+                              }`}
+                            >
+                              {diff === 'easy' ? '启蒙级 (单色)' : diff === 'normal' ? '标准级 (双轮播)' : '挑战级 (三色竞速)'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col justify-between p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
+                      <div className="space-y-1 text-left">
+                        <label className="text-[10px] font-black text-slate-700 flex items-center gap-1">
+                          <Trophy size={13} className="text-amber-500" />
+                          游戏化设计思路与具身心理特征
+                        </label>
+                        <p className="text-[9px] text-slate-400 leading-normal">
+                          系统自动解析此对准思路，绑定星空大满贯。这也是大模型拼装课件的核心Prompt来源：
+                        </p>
+                        <textarea 
+                          rows={4}
+                          value={gameThought} 
+                          onChange={(e) => setGameThought(e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-[10px] font-medium leading-relaxed bg-white focus:ring-1 focus:ring-indigo-400 outline-none transition resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Tab 4: AI Compilation & Codes */}
               {activeTab === 'compile' && (
                 <motion.div 
@@ -980,7 +1216,8 @@ export default function GeneratedCourseware() {
                     onClick={() => {
                       if (activeTab === 'plan') setActiveTab('assets');
                       else if (activeTab === 'assets') setActiveTab('hotspots');
-                      else if (activeTab === 'hotspots') setActiveTab('compile');
+                      else if (activeTab === 'hotspots') setActiveTab('game');
+                      else if (activeTab === 'game') setActiveTab('compile');
                     }}
                     className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl flex items-center gap-1 shadow transition active:scale-95"
                   >
@@ -1049,7 +1286,7 @@ export default function GeneratedCourseware() {
                   </div>
                 </div>
               ) : (
-                // State 2: Fully interactive compiled preview screen (Double panel layout exactly matching requested high quality!)
+                // State 2: Fully interactive compiled preview screen with Dual Engine Choice
                 <div className="absolute inset-0 w-full h-full bg-slate-50 flex flex-col p-3 select-none items-stretch justify-between">
                   
                   {/* Outer Frame Header Indicator */}
@@ -1071,204 +1308,374 @@ export default function GeneratedCourseware() {
                     </button>
                   </div>
 
-                  {/* 16:9 Inner Preview Game Split Layout */}
-                  <div className="flex-1 flex flex-col md:flex-row gap-3 items-stretch min-h-0">
-                    
-                    {/* Visual left panel containing cropped 16:9 image overlay */}
-                    <div className="flex-1 relative aspect-[1.15/1] bg-white rounded-2xl overflow-hidden shadow border border-slate-200/80">
-                      <div className="absolute inset-0">
-                        {/* Background Image: the actual template slide, completely contained within the left area with perfect ratio */}
-                        <img
-                          src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P7.png"
-                          alt="取教具环节 P7"
-                          className="w-full h-full object-contain select-none pointer-events-none"
-                          referrerPolicy="no-referrer"
-                        />
-
-                        {/* Absolute Structured Step Indicators over the visual assets */}
-                        <div className="absolute left-[14.2%] top-[17.5%] w-5 h-5 bg-white border border-amber-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 animate-pulse">
-                          <span className="text-[9px] font-black text-amber-600">①</span>
-                        </div>
-                        <div className="absolute left-[10.5%] top-[44.5%] w-5 h-5 bg-white border border-emerald-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10">
-                          <span className="text-[9px] font-black text-emerald-600">②</span>
-                        </div>
-                        <div className="absolute left-[37.5%] top-[50.5%] w-5 h-5 bg-white border border-sky-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10">
-                          <span className="text-[9px] font-black text-sky-600">③</span>
-                        </div>
-
-                        {/* ========================================================= */}
-                        {/* INTERACTIVE HOTSPOTS OVERLAID VIA EXACT PERCENTAGES       */}
-                        {/* ========================================================= */}
-
-                        {/* 1. Paint/Splash Area Hotspot */}
-                        <div 
-                          onClick={() => handleToggleP7Check('paint', '红黄蓝画笔颜料')}
-                          className="absolute left-[14%] top-[16%] w-[41%] h-[23%] cursor-pointer group flex items-center justify-center rounded-xl transition hover:bg-emerald-500/5 hover:border-emerald-500/30 border border-transparent"
-                        >
-                          {p7CheckedItems.paint && (
-                            <motion.div 
-                              initial={{ scale: 0, rotate: -15 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              className="absolute inset-x-1 inset-y-1 bg-emerald-500/10 backdrop-blur-xs flex items-center justify-center rounded-xl border border-emerald-500/70"
-                            >
-                              <div className="bg-emerald-600 text-white rounded-full px-2 py-1 shadow-md flex items-center gap-1">
-                                <CheckCircle2 size={12} className="animate-bounce" />
-                                <span className="font-extrabold text-[9px]">准备好!</span>
-                              </div>
-                            </motion.div>
-                          )}
-                        </div>
-
-                        {/* 2. Wooden Base Board Area Hotspot */}
-                        <div 
-                          onClick={() => handleToggleP7Check('board', '双色棋盘底板')}
-                          className="absolute left-[10%] top-[43%] w-[25%] h-[42%] cursor-pointer group flex items-center justify-center rounded-xl transition hover:bg-teal-500/5 hover:border-teal-500/30 border border-transparent"
-                        >
-                          {p7CheckedItems.board && (
-                            <motion.div 
-                              initial={{ scale: 0, rotate: 12 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              className="absolute inset-x-1 inset-y-1 bg-teal-500/10 backdrop-blur-xs flex items-center justify-center rounded-xl border border-teal-500/70"
-                            >
-                              <div className="bg-teal-600 text-white rounded-full px-2 py-1 shadow-md flex items-center gap-1">
-                                <CheckCircle2 size={12} className="animate-bounce" />
-                                <span className="font-extrabold text-[9px]">准备好!</span>
-                              </div>
-                            </motion.div>
-                          )}
-                        </div>
-
-                        {/* 3. Cardboard Grids / Paper Area Hotspot */}
-                        <div 
-                          onClick={() => handleToggleP7Check('trays', '九宫卡纸')}
-                          className="absolute left-[37%] top-[49%] w-[20%] h-[31%] cursor-pointer group flex items-center justify-center rounded-xl transition hover:bg-sky-500/5 hover:border-sky-500/30 border border-transparent"
-                        >
-                          {p7CheckedItems.trays && (
-                            <motion.div 
-                              initial={{ scale: 0, rotate: -8 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              className="absolute inset-x-1 inset-y-1 bg-sky-500/10 backdrop-blur-xs flex items-center justify-center rounded-xl border border-sky-500/70"
-                            >
-                              <div className="bg-sky-600 text-white rounded-full px-2 py-1 shadow-md flex items-center gap-1">
-                                <CheckCircle2 size={12} className="animate-bounce" />
-                                <span className="font-extrabold text-[9px]">准备好!</span>
-                              </div>
-                            </motion.div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Highly requested Elegant Sidebar: including custom narration, interactive checkboxes and Dr. Zhang */}
-                    <div className="w-full md:w-[35%] bg-sky-50/60 border border-sky-150 rounded-2xl p-2.5 flex flex-col justify-between shrink-0">
-                      
-                      {/* Checklists */}
-                      <div className="space-y-1.5 text-left">
-                        <div className="bg-gradient-to-r from-teal-400 to-cyan-500 rounded-lg py-1 px-2 text-center text-white font-extrabold text-[10px] tracking-wide mb-1 flex items-center justify-center gap-1">
-                          <span>实操清点核对</span>
-                        </div>
-
-                        <button 
-                          onClick={() => handleToggleP7Check('paint', '红黄蓝画笔颜料')}
-                          className={`w-full flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
-                            p7CheckedItems.paint ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-700'
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border text-white ${
-                            p7CheckedItems.paint ? 'bg-emerald-500 border-emerald-600' : 'border-slate-350 bg-slate-50'
-                          }`}>
-                            {p7CheckedItems.paint && <CheckCircle2 size={11} className="fill-current" />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-extrabold text-[9px] leading-tight">① 三色笔及颜料</div>
-                          </div>
-                        </button>
-
-                        <button 
-                          onClick={() => handleToggleP7Check('board', '双色棋盘底板')}
-                          className={`w-full flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
-                            p7CheckedItems.board ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-700'
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border text-white ${
-                            p7CheckedItems.board ? 'bg-emerald-500 border-emerald-600' : 'border-slate-350 bg-slate-50'
-                          }`}>
-                            {p7CheckedItems.board && <CheckCircle2 size={11} className="fill-current" />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-extrabold text-[9px] leading-tight">② 实操双色棋盘</div>
-                          </div>
-                        </button>
-
-                        <button 
-                          onClick={() => handleToggleP7Check('trays', '九宫卡纸')}
-                          className={`w-full flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
-                            p7CheckedItems.trays ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-700'
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded flex items-center justify-center border text-white ${
-                            p7CheckedItems.trays ? 'bg-emerald-500 border-emerald-600' : 'border-slate-350 bg-slate-50'
-                          }`}>
-                            {p7CheckedItems.trays && <CheckCircle2 size={11} className="fill-current" />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-extrabold text-[9px] leading-tight">③ 九宫十连卡纸</div>
-                          </div>
-                        </button>
-                      </div>
-
-                      {/* BGM note panel */}
-                      <div className="bg-orange-50/80 rounded-xl p-1.5 border border-orange-100 flex items-center gap-2 select-none">
-                        <button 
-                          onClick={handleToggleBgm}
-                          className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center transition-all ${
-                            isPlayingBgm ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600 border border-orange-300 hover:bg-orange-200'
-                          }`}
-                        >
-                          {isPlayingBgm ? <Pause size={12} className="fill-current" /> : <Play size={12} className="fill-current" />}
-                        </button>
-                        <div className="text-left flex-1">
-                          <div className="font-bold text-[9px] text-orange-950">备课律生动画背景音</div>
-                          <div className="text-[8px] text-orange-500 leading-none">【教师上传的配音流音频】</div>
-                        </div>
-                      </div>
-
-                      {/* Speech balloon & Dr. Zhang */}
-                      <div className="flex items-end gap-1.5 pt-2 border-t border-sky-100">
-                        {/* Avatar */}
-                        <div className="w-9 h-12 shrink-0 relative">
-                          <img 
-                            src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%9B%BE%E7%89%87%20%E5%BC%A0%E5%8D%9A%E5%A3%AB.png" 
-                            alt="Dr. Zhang avatar"
-                            className="w-full h-full object-contain pr-0.5"
-                          />
-                        </div>
-                        {/* Text balloon */}
-                        <div 
-                          onClick={() => setP7SpeakText(previewSpeech)}
-                          className="flex-1 bg-white border border-sky-100 p-2 rounded-xl scale-95 hover:scale-98 cursor-pointer select-none text-left"
-                          title="点击配音朗读"
-                        >
-                          <div className="text-slate-700 font-extrabold text-[8px] leading-relaxed">
-                            🔊 {previewSpeech}
-                          </div>
-                          <span className="text-[7px] text-blue-600 font-black block mt-0.5">(听老师挂接的真人配音频)</span>
-                        </div>
-                      </div>
-
-                    </div>
-                  </div>
-
-                  {/* Restarter */}
-                  <div className="mt-2 text-right">
-                    <button 
-                      onClick={resetP7Preview}
-                      className="px-2 py-0.8 bg-slate-900 hover:bg-slate-950 text-white font-extrabold text-[8px] rounded-md inline-flex items-center gap-1 shadow-sm transition active:scale-95"
+                  {/* Selector for Preview Mode */}
+                  <div className="flex gap-1.5 p-1 bg-slate-200/60 backdrop-blur-md rounded-xl mb-2 shrink-0">
+                    <button
+                      onClick={() => setPreviewActiveEngine('p7_ready')}
+                      className={`flex-1 py-1 rounded-lg text-[9px] font-black transition-all ${
+                        previewActiveEngine === 'p7_ready'
+                          ? 'bg-white text-blue-600 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-905 hover:bg-white/30'
+                      }`}
                     >
-                      <RefreshCw size={8} />
-                      重置清单 🔄
+                      🛠️ 课时1：教具清单 (P7)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPreviewActiveEngine('gamified_play');
+                        setPlayScore(0);
+                        setPlayStreak(0);
+                        setPlayTargetColor(['red', 'yellow', 'blue'][Math.floor(Math.random() * 3)] as any);
+                        setPlayFeedbackText('消除游戏已智能部署！点击对应颜色孔位，将原色物体消退。');
+                      }}
+                      className={`flex-1 py-1 rounded-lg text-[9px] font-black transition-all ${
+                        previewActiveEngine === 'gamified_play'
+                          ? 'bg-white text-indigo-650 shadow-xs'
+                          : 'text-slate-660 hover:text-slate-905 hover:bg-white/30'
+                      }`}
+                    >
+                      🎮 课时2：{gameTitle} (互动消除)
                     </button>
                   </div>
+
+                  {previewActiveEngine === 'p7_ready' ? (
+                    <>
+                      {/* 16:9 Inner Preview Game Split Layout */}
+                      <div className="flex-1 flex flex-col md:flex-row gap-3 items-stretch min-h-0">
+                        
+                        {/* Visual left panel containing cropped 16:9 image overlay */}
+                        <div className="flex-1 relative aspect-[1.15/1] bg-white rounded-2xl overflow-hidden shadow border border-slate-200/80">
+                          <div className="absolute inset-0">
+                            {/* Background Image: the actual template slide, completely contained within the left area with perfect ratio */}
+                            <img
+                              src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/P7.png"
+                              alt="取教具环节 P7"
+                              className="w-full h-full object-contain select-none pointer-events-none"
+                              referrerPolicy="no-referrer"
+                            />
+
+                            {/* Absolute Structured Step Indicators over the visual assets */}
+                            <div className="absolute left-[14.2%] top-[17.5%] w-5 h-5 bg-white border border-amber-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10 animate-pulse">
+                              <span className="text-[9px] font-black text-amber-600">①</span>
+                            </div>
+                            <div className="absolute left-[10.5%] top-[44.5%] w-5 h-5 bg-white border border-emerald-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10">
+                              <span className="text-[9px] font-black text-emerald-600">②</span>
+                            </div>
+                            <div className="absolute left-[37.5%] top-[50.5%] w-5 h-5 bg-white border border-sky-400 rounded-full flex items-center justify-center shadow-md pointer-events-none z-10">
+                              <span className="text-[9px] font-black text-sky-600">③</span>
+                            </div>
+
+                            {/* ========================================================= */}
+                            {/* INTERACTIVE HOTSPOTS OVERLAID VIA EXACT PERCENTAGES       */}
+                            {/* ========================================================= */}
+
+                            {/* 1. Paint/Splash Area Hotspot */}
+                            <div 
+                              onClick={() => handleToggleP7Check('paint', '红黄蓝画笔颜料')}
+                              className="absolute left-[14%] top-[16%] w-[41%] h-[23%] cursor-pointer group flex items-center justify-center rounded-xl transition hover:bg-emerald-500/5 hover:border-emerald-500/30 border border-transparent"
+                            >
+                              {p7CheckedItems.paint && (
+                                <motion.div 
+                                  initial={{ scale: 0, rotate: -15 }}
+                                  animate={{ scale: 1, rotate: 0 }}
+                                  className="absolute inset-x-1 inset-y-1 bg-emerald-500/10 backdrop-blur-xs flex items-center justify-center rounded-xl border border-emerald-500/70"
+                                >
+                                  <div className="bg-emerald-600 text-white rounded-full px-2 py-1 shadow-md flex items-center gap-1">
+                                    <CheckCircle2 size={12} className="animate-bounce" />
+                                    <span className="font-extrabold text-[9px]">准备好!</span>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </div>
+
+                            {/* 2. Wooden Base Board Area Hotspot */}
+                            <div 
+                              onClick={() => handleToggleP7Check('board', '双色棋盘底板')}
+                              className="absolute left-[10%] top-[43%] w-[25%] h-[42%] cursor-pointer group flex items-center justify-center rounded-xl transition hover:bg-teal-500/5 hover:border-teal-500/30 border border-transparent"
+                            >
+                              {p7CheckedItems.board && (
+                                <motion.div 
+                                  initial={{ scale: 0, rotate: 12 }}
+                                  animate={{ scale: 1, rotate: 0 }}
+                                  className="absolute inset-x-1 inset-y-1 bg-teal-500/10 backdrop-blur-xs flex items-center justify-center rounded-xl border border-teal-500/70"
+                                >
+                                  <div className="bg-teal-600 text-white rounded-full px-2 py-1 shadow-md flex items-center gap-1">
+                                    <CheckCircle2 size={12} className="animate-bounce" />
+                                    <span className="font-extrabold text-[9px]">准备好!</span>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </div>
+
+                            {/* 3. Cardboard Grids / Paper Area Hotspot */}
+                            <div 
+                              onClick={() => handleToggleP7Check('trays', '九宫卡纸')}
+                              className="absolute left-[37%] top-[49%] w-[20%] h-[31%] cursor-pointer group flex items-center justify-center rounded-xl transition hover:bg-sky-500/5 hover:border-sky-500/30 border border-transparent"
+                            >
+                              {p7CheckedItems.trays && (
+                                <motion.div 
+                                  initial={{ scale: 0, rotate: -8 }}
+                                  animate={{ scale: 1, rotate: 0 }}
+                                  className="absolute inset-x-1 inset-y-1 bg-sky-500/10 backdrop-blur-xs flex items-center justify-center rounded-xl border border-sky-500/70"
+                                >
+                                  <div className="bg-sky-600 text-white rounded-full px-2 py-1 shadow-md flex items-center gap-1">
+                                    <CheckCircle2 size={12} className="animate-bounce" />
+                                    <span className="font-extrabold text-[9px]">准备好!</span>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Highly requested Elegant Sidebar: including custom narration, interactive checkboxes and Dr. Zhang */}
+                        <div className="w-full md:w-[35%] bg-sky-50/60 border border-sky-150 rounded-2xl p-2.5 flex flex-col justify-between shrink-0">
+                          
+                          {/* Checklists */}
+                          <div className="space-y-1.5 text-left">
+                            <div className="bg-gradient-to-r from-teal-400 to-cyan-500 rounded-lg py-1 px-2 text-center text-white font-extrabold text-[10px] tracking-wide mb-1 flex items-center justify-center gap-1">
+                              <span>实操清点核对</span>
+                            </div>
+
+                            <button 
+                              onClick={() => handleToggleP7Check('paint', '红黄蓝画笔颜料')}
+                              className={`w-full flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
+                                p7CheckedItems.paint ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-700'
+                              }`}
+                            >
+                              <div className={`w-4 h-4 rounded flex items-center justify-center border text-white ${
+                                p7CheckedItems.paint ? 'bg-emerald-500 border-emerald-600' : 'border-slate-350 bg-slate-50'
+                              }`}>
+                                {p7CheckedItems.paint && <CheckCircle2 size={11} className="fill-current" />}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-extrabold text-[9px] leading-tight">① 三色笔及颜料</div>
+                              </div>
+                            </button>
+
+                            <button 
+                              onClick={() => handleToggleP7Check('board', '双色棋盘底板')}
+                              className={`w-full flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
+                                p7CheckedItems.board ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-700'
+                              }`}
+                            >
+                              <div className={`w-4 h-4 rounded flex items-center justify-center border text-white ${
+                                p7CheckedItems.board ? 'bg-emerald-500 border-emerald-600' : 'border-slate-350 bg-slate-50'
+                              }`}>
+                                {p7CheckedItems.board && <CheckCircle2 size={11} className="fill-current" />}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-extrabold text-[9px] leading-tight">② 实操双色棋盘</div>
+                              </div>
+                            </button>
+
+                            <button 
+                              onClick={() => handleToggleP7Check('trays', '九宫卡纸')}
+                              className={`w-full flex items-center gap-1.5 p-1.5 rounded-lg border text-left transition-all ${
+                                p7CheckedItems.trays ? 'bg-emerald-50/80 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-700'
+                              }`}
+                            >
+                              <div className={`w-4 h-4 rounded flex items-center justify-center border text-white ${
+                                p7CheckedItems.trays ? 'bg-emerald-500 border-emerald-600' : 'border-slate-350 bg-slate-50'
+                              }`}>
+                                {p7CheckedItems.trays && <CheckCircle2 size={11} className="fill-current" />}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-extrabold text-[9px] leading-tight">③ 九宫十连卡纸</div>
+                              </div>
+                            </button>
+                          </div>
+
+                          {/* BGM note panel */}
+                          <div className="bg-orange-50/80 rounded-xl p-1.5 border border-orange-100 flex items-center gap-2 select-none">
+                            <button 
+                              onClick={handleToggleBgm}
+                              className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center transition-all ${
+                                isPlayingBgm ? 'bg-orange-500 text-white' : 'bg-orange-100 text-orange-600 border border-orange-300 hover:bg-orange-200'
+                              }`}
+                            >
+                              {isPlayingBgm ? <Pause size={12} className="fill-current" /> : <Play size={12} className="fill-current" />}
+                            </button>
+                            <div className="text-left flex-1">
+                              <div className="font-bold text-[9px] text-orange-950">备课律生动画背景音</div>
+                              <div className="text-[8px] text-orange-500 leading-none">【教师上传的配音流音频】</div>
+                            </div>
+                          </div>
+
+                          {/* Speech balloon & Dr. Zhang */}
+                          <div className="flex items-end gap-1.5 pt-2 border-t border-sky-100">
+                            {/* Avatar */}
+                            <div className="w-9 h-12 shrink-0 relative">
+                              <img 
+                                src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%9B%BE%E7%89%87%20%E5%BC%A0%E5%8D%9A%E5%A3%AB.png" 
+                                alt="Dr. Zhang avatar"
+                                className="w-full h-full object-contain pr-0.5"
+                              />
+                            </div>
+                            {/* Text balloon */}
+                            <div 
+                              onClick={() => setP7SpeakText(previewSpeech)}
+                              className="flex-1 bg-white border border-sky-100 p-2 rounded-xl scale-95 hover:scale-98 cursor-pointer select-none text-left"
+                              title="点击配音朗读"
+                            >
+                              <div className="text-slate-700 font-extrabold text-[8px] leading-relaxed">
+                                🔊 {previewSpeech}
+                              </div>
+                              <span className="text-[7px] text-blue-600 font-black block mt-0.5">(听老师挂接的真人配音频)</span>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+
+                      {/* Restarter */}
+                      <div className="mt-2 text-right">
+                        <button 
+                          onClick={resetP7Preview}
+                          className="px-2 py-0.8 bg-slate-900 hover:bg-slate-950 text-white font-extrabold text-[8px] rounded-md inline-flex items-center gap-1 shadow-sm transition active:scale-95"
+                        >
+                          <RefreshCw size={8} />
+                          重置清单 🔄
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Gamified Play matching engine */}
+                      <div className="flex-1 flex flex-col md:flex-row gap-3 items-stretch min-h-0">
+                        {/* Left Space Stage for Gaming Matching */}
+                        <div className="flex-1 relative bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 rounded-2xl p-4 flex flex-col justify-between border border-indigo-950/70 shadow-inner text-white overflow-hidden">
+                          
+                          <div className="text-center font-black text-xs text-yellow-300 flex items-center justify-center gap-1 select-all">
+                            <Trophy size={11} className="text-amber-400 animate-bounce" />
+                            {gameTitle}
+                          </div>
+
+                          <div className="flex-1 flex flex-col items-center justify-center space-y-3.5 my-2">
+                            {/* Floating target colored balloon */}
+                            <div className="text-center">
+                              <span className="text-[8px] uppercase tracking-wider text-slate-400 font-extrabold block">当前配对消除目标</span>
+                              <motion.div 
+                                animate={{ y: [0, -5, 0] }}
+                                transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                                className={`mt-1.5 px-3.5 py-1.5 rounded-2xl text-[10px] font-black inline-flex items-center gap-1 border shadow-lg ${
+                                  playTargetColor === 'red' ? 'bg-red-500 border-red-400 shadow-red-500/10' :
+                                  playTargetColor === 'yellow' ? 'bg-amber-500 border-amber-450 text-slate-950 shadow-amber-505/10' :
+                                  'bg-blue-600 border-blue-400 shadow-blue-500/10'
+                                }`}
+                              >
+                                {playTargetColor === 'red' && '🔴 红色实体球'}
+                                {playTargetColor === 'yellow' && '🟡 黄色实体球'}
+                                {playTargetColor === 'blue' && '🔵 蓝色实体球'}
+                              </motion.div>
+                            </div>
+
+                            {/* Clickable 3 color target holes representing physical peg board */}
+                            <div className="grid grid-cols-3 gap-2 w-full pt-1.5">
+                              {/* Red Slot matching */}
+                              <button 
+                                onClick={() => handleCheckPlayGame('red')}
+                                className="group flex flex-col items-center p-2 rounded-xl bg-red-950/30 hover:bg-red-900/50 transition-all border border-red-500/20 hover:border-red-500 active:scale-95 text-center"
+                              >
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-750 to-red-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                                  <span className="text-[10px] font-black">🔴</span>
+                                </div>
+                                <span className="text-[8px] font-bold text-red-300 mt-1 select-none">红孔对准</span>
+                              </button>
+
+                              {/* Yellow Slot matching */}
+                              <button 
+                                onClick={() => handleCheckPlayGame('yellow')}
+                                className="group flex flex-col items-center p-2 rounded-xl bg-amber-950/30 hover:bg-amber-900/50 transition-all border border-amber-500/20 hover:border-amber-500 active:scale-95 text-center"
+                              >
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                                  <span className="text-[10px] font-black">🟡</span>
+                                </div>
+                                <span className="text-[8px] font-bold text-amber-300 mt-1 select-none">黄孔对准</span>
+                              </button>
+
+                              {/* Blue Slot matching */}
+                              <button 
+                                onClick={() => handleCheckPlayGame('blue')}
+                                className="group flex flex-col items-center p-2 rounded-xl bg-blue-950/30 hover:bg-blue-900/50 transition-all border border-blue-500/20 hover:border-blue-500 active:scale-95 text-center"
+                              >
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-750 to-blue-505 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                                  <span className="text-[10px] font-black">🔵</span>
+                                </div>
+                                <span className="text-[8px] font-bold text-blue-300 mt-1 select-none">蓝孔对准</span>
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Level difficulty metrics */}
+                          <div className="flex justify-between items-center text-[7px] text-slate-400 border-t border-white/5 pt-1 mt-1.5 shrink-0 select-none">
+                            <span>模式：{gameDifficulty === 'easy' ? '启蒙单色' : gameDifficulty === 'normal' ? '标准双色轮播' : '三色竞速消'}</span>
+                            <span>物理对齐：大语言模型装配</span>
+                          </div>
+                        </div>
+
+                        {/* Right Space Sidebar for Gaming Metrics */}
+                        <div className="w-full md:w-[35%] bg-indigo-950/50 border border-indigo-900/40 rounded-2xl p-2.5 flex flex-col justify-between shrink-0 text-white">
+                          
+                          {/* Score metrics */}
+                          <div className="space-y-1.5 text-left">
+                            <div className="bg-gradient-to-r from-amber-410 to-orange-500 rounded-lg py-1 px-1.5 text-center text-slate-950 font-black text-[9px] tracking-wide mb-1 flex items-center justify-center gap-1">
+                              <Trophy size={11} />
+                              <span>游戏实时成绩</span>
+                            </div>
+
+                            <div className="bg-black/30 p-2 rounded-xl text-center">
+                              <div className="text-[8px] text-slate-450 font-bold uppercase">闯关积分</div>
+                              <div className="text-xl font-black text-amber-300 font-mono tracking-wider">{playScore} 分</div>
+                            </div>
+
+                            <div className="bg-black/30 p-1.5 rounded-xl flex items-center justify-between">
+                              <span className="text-[8px] font-bold text-slate-350">🔥 当前连击:</span>
+                              <span className="text-[9px] font-black text-orange-400">{playStreak} COMBO</span>
+                            </div>
+
+                            <div className="p-2 bg-indigo-950/40 rounded-xl text-[8px] text-indigo-200 border border-indigo-900/40 break-all leading-normal max-h-[85px] overflow-y-auto">
+                              <span className="font-extrabold text-indigo-300 block mb-0.5">💡 实操教育理念背景：</span>
+                              {gameThought}
+                            </div>
+                          </div>
+
+                          {/* Avatar voice feedback bubble */}
+                          <div className="flex items-end gap-1.5 pt-1.5 border-t border-indigo-900/40">
+                            <div className="w-9 h-12 shrink-0 relative">
+                              <img 
+                                src="https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/course2/%E5%9B%BE%E7%89%87%20%E5%BC%A0%E5%8D%9A%E5%A3%AB.png" 
+                                alt="Dr. Zhang avatar"
+                                className="w-full h-full object-contain pr-0.5"
+                              />
+                            </div>
+                            <div className="flex-1 bg-black/40 border border-indigo-900/40 p-2 rounded-xl select-none text-left">
+                              <div className="text-slate-200 font-extrabold text-[8px] leading-relaxed">
+                                🔊 张博士：{playFeedbackText}
+                              </div>
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+
+                      {/* Restarter button for game */}
+                      <div className="mt-2 text-right shrink-0">
+                        <button 
+                          onClick={() => {
+                            setPlayScore(0);
+                            setPlayStreak(0);
+                            setPlayFeedbackText('游戏再次重置就绪！小朋友开始快乐对准投掷吧！');
+                            setP7SpeakText('游戏已重置，小朋友，我们开始快乐色彩消除对准大闯关吧！');
+                          }}
+                          className="px-2 py-0.8 bg-indigo-650 hover:bg-indigo-600 text-white font-extrabold text-[8px] rounded-md inline-flex items-center gap-1 shadow-sm transition active:scale-95 animate-pulse"
+                        >
+                          <RefreshCw size={8} />
+                          重新挑战 🎮
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
