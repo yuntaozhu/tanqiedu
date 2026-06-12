@@ -1,4 +1,5 @@
 import { Hotspot, Asset, Voiceover, GameConfig, Slide, SlideData, SlidesMap, SynthesisOptions } from './types';
+import { KnowledgeDoc } from './KnowledgeManager';
 
 /**
  * SlideConfiguration holds editable configurations for a single lesson page.
@@ -166,7 +167,7 @@ function newSlideConfiguration(id: string): SlideConfiguration {
  * KnowledgeBaseCompiler parses the rich course structure into the structured Markdown-style knowledge base.
  */
 export class KnowledgeBaseCompiler {
-  public static compile(project: CoursewareProject): string {
+  public static compile(project: CoursewareProject, customDocs: KnowledgeDoc[] = []): string {
     let kb = `========================================================\n`;
     kb += `📚 探奇课件核心知识库 (GENERATED KNOWLEDGE BASE)\n`;
     kb += `========================================================\n\n`;
@@ -227,6 +228,19 @@ export class KnowledgeBaseCompiler {
       }
       kb += `\n--------------------------------------------------------\n\n`;
     });
+
+    // Append users' persistent custom knowledge documents
+    const enabledDocs = customDocs.filter(d => d.enabled);
+    if (enabledDocs.length > 0) {
+      kb += `## 【四、 附加重组教学大纲与底物理感应知识资产 (ENABLED CUSTOM GUIDELINES)】\n\n`;
+      enabledDocs.forEach((doc, idx) => {
+        kb += `### 🏷️ Guide #${idx + 1}: [${doc.category.toUpperCase()}] ${doc.title}\n`;
+        kb += `- **最后更新/状态**: ${doc.lastUpdated} | 标签: ${doc.tags.join(', ')}\n`;
+        kb += `- **详细指示细节**:\n`;
+        kb += `    ${doc.content.replace(/\n/g, '\n    ')}\n\n`;
+      });
+      kb += `\n--------------------------------------------------------\n\n`;
+    }
 
     return kb;
   }

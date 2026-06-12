@@ -11,6 +11,7 @@ import AiCodingSandboxView from './AiCodingSandboxView';
 
 import { Slide, SlidesMap, SynthesisOptions, SlideData } from './types';
 import { CoursewareProject, KnowledgeBaseCompiler, PromptSynthesizer } from './state';
+import { KnowledgeDoc } from './KnowledgeManager';
 
 // Prepopulate initial core state aligning with realistic sensory courseware specs
 const initialSlides: Slide[] = [
@@ -93,6 +94,9 @@ export default function CoursewareMaker() {
   const [synthesizedPrompt, setSynthesizedPrompt] = useState('');
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
+  // Custom persistent knowledge docs
+  const [kbDocs, setKbDocs] = useState<KnowledgeDoc[]>([]);
+
   // States inside sandbox compiler simulator
   const [isCompiling, setIsCompiling] = useState(false);
   const [compileProgress, setCompileProgress] = useState(0);
@@ -106,12 +110,12 @@ export default function CoursewareMaker() {
     project.loadFromPlainData(courseTitle, targetAge, teachingObjectives, slides, slidesMap);
     
     // Automatically re-compile knowledge base and prompt payload whenever configuration updates!
-    const kb = KnowledgeBaseCompiler.compile(project);
+    const kb = KnowledgeBaseCompiler.compile(project, kbDocs);
     setCompiledKB(kb);
 
     const prompt = PromptSynthesizer.synthesize(kb, options);
     setSynthesizedPrompt(prompt);
-  }, [courseTitle, targetAge, teachingObjectives, slides, slidesMap, options]);
+  }, [courseTitle, targetAge, teachingObjectives, slides, slidesMap, options, kbDocs]);
 
   // Handle slide operations
   const handleAddSlide = (title: string, intent: string) => {
@@ -259,6 +263,7 @@ export default function CoursewareMaker() {
                 <KnowledgeBaseView
                   project={project}
                   compiledKB={compiledKB}
+                  onKnowledgeChanged={setKbDocs}
                 />
               )}
 
