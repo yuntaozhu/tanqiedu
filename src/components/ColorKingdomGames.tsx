@@ -249,19 +249,27 @@ export function SubLessonSelector({ onSelectTrack, onBack }: { onSelectTrack: (t
 // ==========================================
 // 4. ANIMALS SHADOW/FOREST SEARCH GAME
 // ==========================================
-export function ForestSearchGame() {
+export function ForestSearchGame({
+  onPlay,
+  onEnded,
+}: {
+  onPlay?: () => void;
+  onEnded?: () => void;
+} = {}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoKey, setVideoKey] = useState(0);
 
   const handlePlay = () => {
     setIsPlaying(true);
     speakText("开始播放讲解视频！");
+    onPlay?.();
   };
 
   const handleEnded = () => {
     playSynthSound('success');
     confetti({ particleCount: 60, spread: 40 });
     speakText("太棒了！微课导学动画观看完毕，我们准备好进入颜色王国了吗？");
+    onEnded?.();
   };
 
   const handleReset = () => {
@@ -378,7 +386,15 @@ export function ForestSearchGame() {
 // ==========================================
 // 4_PREP. COLOR PREPARATION GAME (取教具环节)
 // ==========================================
-export function ColorPrepGame() {
+export type ColorCue = 'red' | 'yellow' | 'blue';
+
+export function ColorPrepGame({
+  onItemReady,
+  onAllReady,
+}: {
+  onItemReady?: (color: ColorCue) => void;
+  onAllReady?: () => void;
+} = {}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [checkedItems, setCheckedItems] = useState({
@@ -427,6 +443,7 @@ export function ColorPrepGame() {
         playSynthSound('success');
         setSpeechText(`好棒！你已经准备好了：${label} 🌟`);
         speakText(`准备好了${label}`);
+        onItemReady?.(key === 'paint' ? 'red' : key === 'board' ? 'yellow' : 'blue');
         
         // If all checked
         if (updated.paint && updated.board && updated.trays) {
@@ -439,6 +456,7 @@ export function ColorPrepGame() {
             });
             setSpeechText("大功告成！所有教具完美准备就绪，让我们进入颜色王国开始智慧大闯关吧！🚀");
             speakText("哇，太棒了！所有教具准备完整，你可以点击下一页进入闯关挑战啦！");
+            onAllReady?.();
           }, 800);
         }
       } else {
@@ -742,7 +760,15 @@ export function ColorPrepGame() {
 // ==========================================
 // 5. TREASURE MAGIC BOX GAME
 // ==========================================
-export function TreasureBoxGame() {
+export function TreasureBoxGame({
+  onSort,
+  onFail,
+  onComplete,
+}: {
+  onSort?: (color: ColorCue) => void;
+  onFail?: () => void;
+  onComplete?: () => void;
+} = {}) {
   const [activeItem, setActiveItem] = useState<{ id: string; color: 'red' | 'yellow' | 'blue'; label: string; icon: string } | null>(null);
   const [droppedGrids, setDroppedGrids] = useState<{ red: string[]; yellow: string[]; blue: string[] }>({
     red: [], yellow: [], blue: []
@@ -770,6 +796,7 @@ export function TreasureBoxGame() {
       setComplete(true);
       playSynthSound('success');
       confetti({ particleCount: 70, spread: 50 });
+      onComplete?.();
       return;
     }
     
@@ -789,15 +816,18 @@ export function TreasureBoxGame() {
       };
       setDroppedGrids(updated);
       setActiveItem(null);
+      onSort?.(color);
       
       const totalUsed = Object.values(updated).flat().length;
       if (totalUsed === treasurePool.length) {
         setComplete(true);
         confetti({ particleCount: 100, spread: 80 });
+        onComplete?.();
       }
     } else {
       playSynthSound('fail');
       speakText("颜色的地方不对哦，再试一下吧！");
+      onFail?.();
     }
   };
 
@@ -953,7 +983,15 @@ export function TreasureBoxGame() {
 // ==========================================
 // 6. ANIMAL CONNECT GAME
 // ==========================================
-export function AnimalConnectGame() {
+export function AnimalConnectGame({
+  onSort,
+  onFail,
+  onComplete,
+}: {
+  onSort?: (color: ColorCue) => void;
+  onFail?: () => void;
+  onComplete?: () => void;
+} = {}) {
   const [selectedAnimal, setSelectedAnimal] = useState<string | null>(null);
   const [connections, setConnections] = useState<Record<string, string>>({});
   const [complete, setComplete] = useState(false);
@@ -980,15 +1018,18 @@ export function AnimalConnectGame() {
       const updated = { ...connections, [selectedAnimal]: colorId };
       setConnections(updated);
       setSelectedAnimal(null);
+      onSort?.(colorId as ColorCue);
 
       if (Object.keys(updated).length === animals.length) {
         setComplete(true);
         confetti({ particleCount: 75, spread: 50 });
         speakText("连线全部正确！太聪明啦！");
+        onComplete?.();
       }
     } else {
       playSynthSound('fail');
       speakText(`${anim.name}不是${colorId === 'red' ? '红色' : colorId === 'yellow' ? '黄色' : '蓝色'}哦，再找找看`);
+      onFail?.();
     }
   };
 
@@ -1130,7 +1171,15 @@ export function AnimalConnectGame() {
 // ==========================================
 // 7. SHAPE COLORING GAME
 // ==========================================
-export function ShapeColoringGame() {
+export function ShapeColoringGame({
+  onSort,
+  onFail,
+  onComplete,
+}: {
+  onSort?: (color: ColorCue) => void;
+  onFail?: () => void;
+  onComplete?: () => void;
+} = {}) {
   const [selectedBrush, setSelectedBrush] = useState<'red' | 'yellow' | 'blue' | null>(null);
   const [coloredRows, setColoredRows] = useState<Record<string, boolean>>({
     car: false,
@@ -1208,6 +1257,7 @@ export function ShapeColoringGame() {
       setSelectedBrush(null);
       setHelperText(`太棒了！你完美连接并着色了：${title}！✨`);
       speakText(`真聪明！着色成功，漂亮的${title}连接好了！`);
+      onSort?.(expectedColor);
 
       if (updated.car && updated.plane && updated.house) {
         setComplete(true);
@@ -1216,12 +1266,14 @@ export function ShapeColoringGame() {
           confetti({ particleCount: 100, spread: 50 });
           setHelperText("哇！黑白轮廓全部变成彩色的大飞机、小红车和蓝房子啦！你是天才小画家！🎖️");
           speakText("太神奇了！所有的玩具都拥有了艳丽的颜色，我们太棒啦！");
+          onComplete?.();
         }, 1000);
       }
     } else {
       playSynthSound('fail');
       setHelperText(`搭配不对哦。对照上方的模型看看：${title}应该是什么颜色的呢？`);
       speakText(`停一停、想一想、再试一试！${title}好像不是这个色哦。`);
+      onFail?.();
     }
   };
 
@@ -1444,7 +1496,15 @@ export function ShapeColoringGame() {
 // ==========================================
 // 8. DOUBLE COLOR MATRIX PUZZLE
 // ==========================================
-export function DoubleColorGame() {
+export function DoubleColorGame({
+  onMatch,
+  onFail,
+  onComplete,
+}: {
+  onMatch?: () => void;
+  onFail?: () => void;
+  onComplete?: () => void;
+} = {}) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [correctFlags, setCorrectFlags] = useState<Record<number, boolean>>({});
   const [complete, setComplete] = useState(false);
@@ -1485,6 +1545,7 @@ export function DoubleColorGame() {
       const leftItem = columnLeft.find(x => x.id === selectedId);
       setHelperText(`太棒啦！正确连接：${leftItem?.label} 配对成功！✨`);
       speakText(`${leftItem?.label} 配对成功，真是太棒了！`);
+      onMatch?.();
 
       if (Object.keys(updated).length === columnLeft.length) {
         setComplete(true);
@@ -1493,12 +1554,14 @@ export function DoubleColorGame() {
           confetti({ particleCount: 100, spread: 50 });
           setHelperText("哇！所有的拥抱泡泡和双色积木都成功连结起来了！你的色彩观察力和数形匹配力简直是天才级别！🎖️");
           speakText("太了不起了！你完成了全部的拥抱泡泡和彩球对应的双色积木连线挑战！");
+          onComplete?.();
         }, 1000);
       }
     } else {
       playSynthSound('fail');
       setHelperText("这个积木的颜色好像和我们的双色泡泡不搭哦，再来“停一停、想一想、试一试”！");
       speakText("颜色不太搭哦，请停一停、想一想、再试一试！");
+      onFail?.();
     }
   };
 
@@ -1731,7 +1794,13 @@ export function DoubleColorGame() {
 // ==========================================
 // 9. SPACE STATION DRAG SHELF GAME
 // ==========================================
-export function SpaceStationDragGame() {
+export function SpaceStationDragGame({
+  onCellOk,
+  onComplete,
+}: {
+  onCellOk?: (color: ColorCue) => void;
+  onComplete?: () => void;
+} = {}) {
   const [gridItems, setGridItems] = useState<Record<number, string>>({});
   const [complete, setComplete] = useState(false);
 
@@ -1752,6 +1821,11 @@ export function SpaceStationDragGame() {
     const updated = { ...gridItems, [gridIndex]: emoji };
     setGridItems(updated);
 
+    const emojiColor: Record<string, ColorCue> = { '🔴': 'red', '🟡': 'yellow', '🔵': 'blue' };
+    if (emoji === referenceCard[gridIndex as keyof typeof referenceCard] && emojiColor[emoji]) {
+      onCellOk?.(emojiColor[emoji]);
+    }
+
     // Check if matching reference exactly
     let match = true;
     for (let i = 0; i < 9; i++) {
@@ -1766,6 +1840,7 @@ export function SpaceStationDragGame() {
       playSynthSound('success');
       confetti({ particleCount: 100, spread: 80 });
       speakText("积木对应、位置拼搭匹配无误！恭喜我们胜利！");
+      onComplete?.();
     }
   };
 
@@ -1884,7 +1959,13 @@ export function SpaceStationDragGame() {
 // ==========================================
 // 10. COLOR SUDOKU GAME (3x3 UNIQUE)
 // ==========================================
-export function ColorSudokuGame() {
+export function ColorSudokuGame({
+  onFail,
+  onComplete,
+}: {
+  onFail?: () => void;
+  onComplete?: () => void;
+} = {}) {
   const [board, setBoard] = useState<Record<number, 'red' | 'yellow' | 'blue' | null>>({
     0: null, 1: null, 2: null,
     3: null, 4: null, 5: null,
@@ -1935,6 +2016,10 @@ export function ColorSudokuGame() {
 
     setErrorCells(Array.from(new Set(errorList)));
 
+    if (errorList.length > 0) {
+      onFail?.();
+    }
+
     // Check complete and correct
     let isFinished = true;
     for (let i = 0; i < 9; i++) {
@@ -1946,6 +2031,7 @@ export function ColorSudokuGame() {
       playSynthSound('success');
       confetti({ particleCount: 120, spread: 90 });
       speakText("颜色数独太厉害啦！每一行每一列都完全不重复！");
+      onComplete?.();
     } else {
       setComplete(false);
     }

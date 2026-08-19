@@ -29,6 +29,61 @@ export const BUMI_ACTIONS: {
   { code: 17, id: "default",     name: "停止",     danger: false },
 ];
 
+/** Classroom auto-play: red=cheer, yellow=swing, blue=shake */
+export type BumiColor = "red" | "yellow" | "blue";
+export const BUMI_COLOR: Record<BumiColor, BumiActionId> = {
+  red: "cheer",
+  yellow: "swing",
+  blue: "shake",
+};
+
+/** Shown by default on the dock; the rest sit behind 「更多」 */
+export const BUMI_CLASSROOM_SAFE: BumiActionId[] = [
+  "switch", "swing", "shake", "cheer", "tear", "default",
+];
+
+export type BumiCuer = {
+  cue: (action: string, minIntervalMs?: number) => void;
+  cueColor: (c: BumiColor, minIntervalMs?: number) => void;
+  cueFail: () => void;
+  cueWin: () => void;
+};
+
+/** Silent no-op when disconnected. Throttles so classroom clicks cannot spam DDS. */
+export function createBumiCuer(
+  isConnected: () => boolean,
+  send: (action: string) => Promise<unknown>
+): BumiCuer {
+  let lastAt = 0;
+  let failUntil = 0;
+  const cue = (action: string, minIntervalMs = 2500) => {
+    if (!isConnected()) return;
+    const now = Date.now();
+    if (now - lastAt < minIntervalMs) return;
+    lastAt = now;
+    void send(action).catch(() => {});
+  };
+  return {
+    cue,
+    cueColor: (c, minIntervalMs) => cue(BUMI_COLOR[c], minIntervalMs),
+    cueWin: () => cue("cheer", 4000),
+    cueFail: () => {
+      if (!isConnected()) return;
+      const now = Date.now();
+      if (now < failUntil) return;
+      failUntil = now + 4000;
+      lastAt = now;
+      void send("tear")
+        .then(() => {
+          window.setTimeout(() => {
+            void send("default").catch(() => {});
+          }, 2500);
+        })
+        .catch(() => {});
+    },
+  };
+}
+
 const ALIAS: Record<string, BumiActionId> = Object.fromEntries(
   BUMI_ACTIONS.flatMap((a) => [
     [String(a.code), a.id],

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, ChevronRight, Pen, Eraser, Bot, 
   PartyPopper, Play, Volume2, LoaderCircle, Maximize2, Minimize2,
-  Home, X, RefreshCw, PowerOff, Power, Pause, Trash2, Award
+  Home, X, RefreshCw, PowerOff, Power, Pause, Trash2, Award, ChevronsUpDown
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Application, Graphics } from 'pixi.js';
@@ -19,7 +19,9 @@ import {
   ShapeForestSearchGame, ShapeMagicChestGame, ShapeAnimalConnectGame,
   ShapeColoringGame as ShapeColoringCanvas, ShapeBuildingBlocksGame, ShapeSudokuGame
 } from '../components/ShapeKingdomGames';
-import { BUMI_ACTIONS, bumiCmd, bumiState, bumiBaseUrl } from '../lib/bumi';
+import {
+  BUMI_ACTIONS, BUMI_CLASSROOM_SAFE, bumiCmd, bumiState, bumiBaseUrl, createBumiCuer,
+} from '../lib/bumi';
 
 // 1. Two-level Mock Data Structure (Phase 2 with 10 TPR Pages)
 const mockData = [
@@ -336,6 +338,7 @@ export default function Courseware() {
   const [robotStatus, setRobotStatus] = useState<'idle' | 'executing' | 'done'>('idle');
   const [robotHint, setRobotHint] = useState('未连接 · 请先开 bumi_server.py');
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [dockMore, setDockMore] = useState(false);
   
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -343,6 +346,11 @@ export default function Courseware() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
+  const connectedRef = useRef(false);
+  const c4SwitchSent = useRef(false);
+  const rewardCued = useRef(false);
+  const sendQuietRef = useRef<(action: string) => Promise<unknown>>(async () => {});
+  const cuerRef = useRef<ReturnType<typeof createBumiCuer> | null>(null);
 
   const activeCourse = mockData.find(c => c.id === activeCourseId) as any;
   const currentPage = activeCourse?.pages[currentPageIdx] as any;
@@ -474,6 +482,42 @@ export default function Courseware() {
     );
     return data;
   };
+
+  connectedRef.current = isRobotConnected;
+  sendQuietRef.current = async (action: string) => {
+    const data = await bumiCmd(action);
+    const meta = BUMI_ACTIONS.find(
+      (a) => a.id === action || a.id.toUpperCase() === action
+    );
+    setRobotHint(`课件 ${meta?.name || action} · mode=${data.mode ?? '?'}`);
+    return data;
+  };
+  if (!cuerRef.current) {
+    cuerRef.current = createBumiCuer(
+      () => connectedRef.current,
+      (action) => sendQuietRef.current(action)
+    );
+  }
+  const { cue, cueColor, cueFail, cueWin } = cuerRef.current;
+
+  useEffect(() => {
+    if (activeCourseId === 'c4' && isRobotConnected && !c4SwitchSent.current) {
+      c4SwitchSent.current = true;
+      cue('switch', 0);
+    }
+    if (activeCourseId !== 'c4') c4SwitchSent.current = false;
+  }, [activeCourseId, isRobotConnected, cue]);
+
+  useEffect(() => {
+    if (activeCourseId === 'c4' && currentPage?.type === 'reward' && isRobotConnected) {
+      if (!rewardCued.current) {
+        rewardCued.current = true;
+        cue('cheer', 0);
+      }
+    } else if (currentPage?.type !== 'reward') {
+      rewardCued.current = false;
+    }
+  }, [activeCourseId, currentPageIdx, isRobotConnected, currentPage?.type, cue]);
 
   const handlePraise = () => {
      confetti({
@@ -656,7 +700,7 @@ export default function Courseware() {
               )}
 
               {currentPage.type === 'color_intro' && (
-                 <ColorIntroScene onComplete={() => setCurrentPageIdx(1)} />
+                 <ColorIntroScene onComplete={() => { cue('swing'); setCurrentPageIdx(1); }} />
               )}
 
               {currentPage.type === 'level_grid' && (
@@ -675,8 +719,10 @@ export default function Courseware() {
                     onBack={() => setCurrentPageIdx(1)} 
                     onSelectTrack={(track) => {
                        if (track === 'camp') {
+                          cue('swing');
                           setCurrentPageIdx(3);
                        } else {
+                          cue('cheer');
                           setCurrentPageIdx(8);
                        }
                     }} 
@@ -684,35 +730,35 @@ export default function Courseware() {
               )}
 
               {currentPage.type === 'forest_search' && (
-                 <ForestSearchGame />
+                 <ForestSearchGame onPlay={() => cue('switch')} onEnded={() => cueWin()} />
               )}
 
               {currentPage.type === 'color_prep' && (
-                 <ColorPrepGame />
+                 <ColorPrepGame onItemReady={() => cue('swing')} onAllReady={() => cueWin()} />
               )}
 
               {currentPage.type === 'treasure_chest' && (
-                 <TreasureBoxGame />
+                 <TreasureBoxGame onSort={cueColor} onFail={cueFail} onComplete={cueWin} />
               )}
 
               {currentPage.type === 'animal_connect' && (
-                 <AnimalConnectGame />
+                 <AnimalConnectGame onSort={cueColor} onFail={cueFail} onComplete={cueWin} />
               )}
 
               {currentPage.type === 'shape_coloring' && (
-                 <ShapeColoringGame />
+                 <ShapeColoringGame onSort={cueColor} onFail={cueFail} onComplete={cueWin} />
               )}
 
               {currentPage.type === 'double_color' && (
-                 <DoubleColorGame />
+                 <DoubleColorGame onMatch={() => cue('shake')} onFail={cueFail} onComplete={cueWin} />
               )}
 
               {currentPage.type === 'space_station_drag' && (
-                 <SpaceStationDragGame />
+                 <SpaceStationDragGame onCellOk={(c) => cueColor(c, 4000)} onComplete={cueWin} />
               )}
 
               {currentPage.type === 'color_sudoku' && (
-                 <ColorSudokuGame />
+                 <ColorSudokuGame onFail={cueFail} onComplete={cueWin} />
               )}
 
               {/* LESSON 02 SHAPE WORLD INTERACTIVE PAGES */}
@@ -845,15 +891,19 @@ export default function Courseware() {
           </AnimatePresence>
         </div>
 
-        {/* Bumi action dock */}
+        {/* Bumi action dock — classroom safe by default; danger/teach behind 「更多」 */}
         {isRobotConnected && (
           <div className="bg-slate-950 border-t border-slate-800 px-3 py-2 shrink-0">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-mono text-emerald-400 tracking-wider">BUMI ACTIONS · 0走路 1挥手 2握手 3欢呼 5使能 6准备 7示教 8保存 10播放 11舞1 12起身 13躺下 14舞2 15舞3 16擦泪 17停止</span>
+              <span className="text-[10px] font-mono text-emerald-400 tracking-wider">
+                {dockMore
+                  ? 'BUMI · 全部动作（橙=危险，需确认）'
+                  : 'BUMI · 课堂安全：准备 挥手 握手 欢呼 擦泪 停止'}
+              </span>
               <span className="text-[10px] text-slate-500 truncate max-w-[40%]">{robotHint}</span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {BUMI_ACTIONS.map((a) => (
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {(dockMore ? BUMI_ACTIONS : BUMI_ACTIONS.filter((a) => BUMI_CLASSROOM_SAFE.includes(a.id))).map((a) => (
                 <button
                   key={a.code}
                   title={`${a.code}=${a.name}`}
@@ -864,6 +914,14 @@ export default function Courseware() {
                   {a.code} {a.name}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setDockMore((v) => !v)}
+                className="px-2 py-1 rounded-md text-[11px] font-bold border border-slate-600 bg-slate-900 text-slate-300 hover:bg-slate-800 flex items-center gap-1"
+              >
+                <ChevronsUpDown size={12} />
+                {dockMore ? '收起' : '更多'}
+              </button>
             </div>
           </div>
         )}
