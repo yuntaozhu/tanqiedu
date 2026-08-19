@@ -1,108 +1,84 @@
 /**
- * Ideogram API Service
- * 
- * Uses the official Ideogram v3 API to generate images.
+ * Ideogram API Service — Ideogram 4.0 generate
+ * POST /v1/ideogram-v4/generate  (text_prompt + square 2048)
  */
 export class IdeogramApiService {
-  
-  /**
-   * Generates an image mirroring the signature of GoogleApiService.
-   */
   async generateImage(
-    prompt: string, 
-    seed?: number, 
-    protagonist?: string, 
+    prompt: string,
+    seed?: number,
+    protagonist?: string,
     referenceImageBase64?: string
   ): Promise<string | null> {
     const apiKey = import.meta.env.VITE_IDEOGRAM_API_KEY;
-    
+
     if (!apiKey) {
       console.error("Ideogram API Key is missing.");
       return null;
     }
 
     try {
-      // 1. Construct Prompt
-      const characterContext = protagonist ? `Main character: ${protagonist}. ` : '';
-      // We rely on style_reference_images for style now, but keeping text reinforcement helps.
-      const styleKeywords = "Line art artistic cartoon work, black and white, coloring book style.";
-      const constraints = "CRITICAL: NO TEXT, NO ENGLISH WORDS, white background.";
-      
-      const fullPrompt = `${styleKeywords} ${characterContext} Scenario: ${prompt}. ${constraints}`;
+      const characterContext = protagonist ? `Main character: ${protagonist}. ` : "";
+      const styleKeywords =
+        "Children coloring-book line art, black and white cartoon outlines, thick clean contours, pure white background.";
+      const constraints = "CRITICAL: NO TEXT, NO LETTERS, NO WATERMARK, no shading, no grayscale fill.";
+      const fullPrompt = `${styleKeywords} ${characterContext}Scenario: ${prompt}. ${constraints}`;
 
-      console.log(`Generating image with Ideogram v3 (Seed: ${seed ?? 'random'})...`);
+      console.log(`Generating image with Ideogram v4 (Seed: ${seed ?? "random"})...`);
 
-      // 2. Prepare FormData
       const fd = new FormData();
-      fd.append('prompt', fullPrompt);
-      fd.append('aspect_ratio', '1x1'); 
-      fd.append('rendering_speed', 'FLASH');   // Use FLASH for speed
-      fd.append('style_type', 'AUTO');         // AUTO is required when using style_reference_images
-      fd.append('magic_prompt', 'ON');         // Requested by user
-      
+      fd.append("text_prompt", fullPrompt);
+      fd.append("resolution", "2048x2048");
+      fd.append("rendering_speed", "DEFAULT");
       if (seed !== undefined) {
-        fd.append('seed', seed.toString());
+        fd.append("seed", seed.toString());
       }
-
-      // 3. Handle Reference Image (Style Reference)
       if (referenceImageBase64) {
         try {
-          // Convert Base64 to Blob
           const res = await fetch(referenceImageBase64);
           const blob = await res.blob();
-          // Append as 'style_reference_images' (plural, implies array support in API)
-          fd.append('style_reference_images', blob, 'reference.png');
+          fd.append("style_reference_images", blob, "reference.png");
         } catch (e) {
           console.warn("Failed to attach reference image to Ideogram request:", e);
         }
       }
 
-      // 4. Endpoint configuration
-      // Vercel proxy rewrite: /ideogram-proxy/v1/ideogram-v3/generate -> https://api.ideogram.ai/v1/ideogram-v3/generate
-      const endpoint = '/ideogram-proxy/v1/ideogram-v3/generate';
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const fallbackProxy = 'https://corsproxy.io/?' + encodeURIComponent('https://api.ideogram.ai/v1/ideogram-v3/generate');
-      
-      let currentEndpoint = endpoint;
-      let response = await fetch(currentEndpoint, {
-        method: 'POST',
-        headers: {
-          'Api-Key': apiKey,
-          // Content-Type is set automatically with boundary by fetch when using FormData
-        },
+      const endpoint = "/ideogram-proxy/v1/ideogram-v4/generate";
+      const isLocalhost =
+        window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      const directUrl = "https://api.ideogram.ai/v1/ideogram-v4/generate";
+
+      let response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Api-Key": apiKey },
         body: fd,
       });
 
-      // Fallback logic for localhost (no vercel rewrite)
-      if (response.status === 404 && isLocalhost) {
-        console.warn("Vercel proxy not found, trying fallback proxy for Ideogram v3...");
-        response = await fetch(fallbackProxy, {
-            method: 'POST',
-            headers: { 'Api-Key': apiKey },
-            body: fd,
+      if ((response.status === 404 || response.status === 0) && isLocalhost) {
+        console.warn("Ideogram proxy miss, calling api.ideogram.ai directly...");
+        response = await fetch(directUrl, {
+          method: "POST",
+          headers: { "Api-Key": apiKey },
+          body: fd,
         });
       }
 
       const responseText = await response.text();
-
       if (!response.ok) {
         console.error(`Ideogram API Error: ${response.status}`, responseText);
         return null;
       }
 
-      let data;
+      let data: any;
       try {
         data = JSON.parse(responseText);
-      } catch (e) {
+      } catch {
         console.error("Ideogram response is not valid JSON:", responseText);
         return null;
       }
-      
-      // Ideogram v3 response structure usually contains `data` array
-      if (data && data.data && data.data.length > 0) {
-        return data.data[0].url;
-      }
-      
+
+      const url = data?.data?.[0]?.url;
+      if (url) return url;
+      console.error("Ideogram v4 returned no image url:", data);
     } catch (error) {
       console.error("Ideogram generation failed:", error);
       return null;
