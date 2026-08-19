@@ -28,7 +28,7 @@ export class IdeogramApiService {
       const fd = new FormData();
       fd.append("text_prompt", fullPrompt);
       fd.append("resolution", "2048x2048");
-      fd.append("rendering_speed", "DEFAULT");
+      fd.append("rendering_speed", "TURBO");
       if (seed !== undefined) {
         fd.append("seed", seed.toString());
       }

@@ -7,7 +7,7 @@
 import { LitElement, css, html, PropertyValues, nothing } from 'lit';
 import { state, query } from 'lit/decorators.js';
 import { processLineArtImage } from '../../utils';
-import { GoogleApiService, IdeogramApiService, ReplicateApiService } from '../../lib/api';
+import { IdeogramApiService } from '../../lib/api';
 import { emitBumiToolCue } from '../lib/bumi';
 import {
   doubaoChat,
@@ -25,8 +25,6 @@ import {
 } from '../../lib/tanqiDoubao';
 import '../../visual-3d';
 import '../../log-viewer';
-
-type EngineType = 'google' | 'ideogram' | 'replicate';
 
 interface StoryPanel {
   id: string;
@@ -80,7 +78,6 @@ export class GdmLiveAudio extends LitElement {
   @state() error = '';
   @state() storyPanels: StoryPanel[] = [];
   @state() savedScrolls: SavedScroll[] = [];
-  @state() drawingEngine: EngineType = 'ideogram'; // Default to Ideogram (灵犀)
   @state() isConnecting = false;
   @state() isMuted = false;
   @state() seed: number | undefined = undefined;
@@ -179,9 +176,7 @@ export class GdmLiveAudio extends LitElement {
   @query('.paper-scroll-container')
   private scrollContainer!: HTMLDivElement;
 
-  private googleApi = new GoogleApiService();
   private ideogramApi = new IdeogramApiService();
-  private replicateApi = new ReplicateApiService();
   
   private inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 16000});
   private outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({sampleRate: 24000});
@@ -794,108 +789,20 @@ export class GdmLiveAudio extends LitElement {
     printWindow.document.close();
   }
 
-  private async extractProtagonist(prompt: string): Promise<string> {
-    try {
-      const systemPrompt = `从以下描述中提取主角。要求：
-          1. 必须是纯中文词汇。
-          2. 必须是幼儿易懂的极简词汇（如：小兔子、红赛车、大恐龙）。
-          3. 严禁包含任何英文字符或拼音。
-          描述：${prompt}`;
-      
-      const result = await this.replicateApi.generateText(systemPrompt);
-      return result?.trim() || '';
-    } catch (e) {
-      console.warn("Protagonist extraction failed", e);
-      return '';
-    }
+  private localTitle(prompt: string): string {
+    const t = prompt.replace(/\s+/g, '').slice(0, 5);
+    return t ? `🎨 ${t}` : '🎨 奇妙画作';
   }
 
-  private async summarizePrompt(prompt: string): Promise<string> {
-    try {
-      const systemPrompt = `请将绘画描述总结为一个幼儿标题。要求：
-          1. 必须是2-5个字的极简中文词汇，适合3岁幼儿（如：漂亮小鱼、开心小熊）。
-          2. 严禁出现任何英文单词、字母或拼音。
-          3. 在标题开头或结尾增加一个匹配的表情符号(Emoji)。
-          描述内容：${prompt}`;
-          
-      const result = await this.replicateApi.generateText(systemPrompt);
-      return result?.trim() || '🎨 奇妙画作';
-    } catch (e) {
-      return '🎨 奇妙画作';
-    }
-  }
-
-  private async translatePrompt(text: string): Promise<string> {
-    try {
-      const systemPrompt = `Translate the following text into English. Output ONLY the English translation, no other text.
-      Text: ${text}`;
-      
-      const translated = await this.replicateApi.generateText(systemPrompt);
-      if (translated) return translated.trim();
-      throw new Error("Translation returned empty");
-    } catch (e) {
-      console.warn("Replicate translation failed, using original prompt as fallback", e);
-      return text;
-    }
-  }
-
-  private async callGenerateImage(englishPrompt: string, seed?: number): Promise<string | null> {
-    // Order: Ideogram -> Google -> Replicate -> Ideogram
-    const engines: EngineType[] = ['ideogram', 'google', 'replicate'];
-    
-    const apis = {
-      'google': this.googleApi,
-      'replicate': this.replicateApi,
-      'ideogram': this.ideogramApi
-    };
-    
-    // Filter engines to exclude current if needed, but ensure list is valid
-    const orderedEngines = [
-      this.drawingEngine,
-      ...engines.filter(e => e !== this.drawingEngine)
-    ];
-
-    // FIX: Only use reference (anchor) image if we are on the 2nd panel or later
-    const referenceImage = this.storyPanels.length > 0 ? this.anchorImageBase64 : undefined;
-
-    let englishProtagonist = this.protagonistDescription;
-    if (englishProtagonist && /[\u4e00-\u9fa5]/.test(englishProtagonist)) {
-        try {
-           englishProtagonist = await this.translatePrompt(englishProtagonist);
-        } catch(e) {
-           console.warn("Protagonist translation failed, proceeding with original.");
-        }
-    }
-
-    const tryGen = async (api: GoogleApiService | IdeogramApiService | ReplicateApiService, engineName: string) => {
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error(`${engineName} Timeout`)), 60000)
-      );
-      
-      return Promise.race([
-        api.generateImage(englishPrompt, seed, englishProtagonist, referenceImage),
-        timeoutPromise
-      ]) as Promise<string | null>;
-    };
-
-    for (const engine of orderedEngines) {
-       try {
-         if (engine !== this.drawingEngine) {
-           let engineName = '灵犀';
-           if (engine === 'google') engineName = '妙笔';
-           if (engine === 'replicate') engineName = '幻影';
-           this.status = `${engineName}正在接力...`;
-         }
-         
-         const result = await tryGen(apis[engine], engine);
-         if (result) return result;
-         console.warn(`${engine} returned null, trying next...`);
-       } catch (error) {
-         console.warn(`${engine} failed:`, error);
-       }
-    }
-
-    return null;
+  private async callGenerateImage(prompt: string, seed?: number): Promise<string | null> {
+    const referenceImage = this.storyPanels.some((p) => p.url) ? this.anchorImageBase64 : undefined;
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Ideogram Timeout')), 60000)
+    );
+    return Promise.race([
+      this.ideogramApi.generateImage(prompt, seed, this.protagonistDescription, referenceImage),
+      timeoutPromise,
+    ]) as Promise<string | null>;
   }
 
   private async onDoubaoTurn(data: DoubaoTurn) {
@@ -932,20 +839,9 @@ export class GdmLiveAudio extends LitElement {
 
     try {
       if (this.seed === undefined) this.seed = Math.floor(Math.random() * 2147483647);
-
-      const englishPromptPromise = this.translatePrompt(prompt);
-      const titlePromise = this.summarizePrompt(prompt);
-      const protagonistPromise = (!this.protagonistDescription && this.storyPanels.length <= 1)
-        ? this.extractProtagonist(prompt)
-        : Promise.resolve(null);
-
-      const englishPrompt = await englishPromptPromise;
-      const imageUrlPromise = this.callGenerateImage(englishPrompt, this.seed);
-      const [newProtagonist, kidFriendlyTitle] = await Promise.all([protagonistPromise, titlePromise]);
-      if (newProtagonist) this.protagonistDescription = newProtagonist;
-
-      const imageUrl = await imageUrlPromise;
-      if (!imageUrl) throw new Error('Image generation returned null from all engines');
+      const kidFriendlyTitle = this.localTitle(prompt);
+      const imageUrl = await this.callGenerateImage(prompt, this.seed);
+      if (!imageUrl) throw new Error('Image generation returned null from Ideogram');
 
       const processedImage = await processLineArtImage(imageUrl, 800);
       if (!this.anchorImageBase64 && this.storyPanels.length <= 1) {
@@ -989,12 +885,8 @@ export class GdmLiveAudio extends LitElement {
     emitBumiToolCue('generate');
     try {
       const magicPrompt = `${panel.prompt}, 画面充满魔法闪光，梦幻气息`;
-      
-      const englishPrompt = await this.translatePrompt(magicPrompt);
-      const kidFriendlyTitle = await this.summarizePrompt(magicPrompt);
-      
-      const imagePromise = this.callGenerateImage(englishPrompt, Math.floor(Math.random() * 2147483647));
-      const imageUrl = await imagePromise;
+      const kidFriendlyTitle = this.localTitle(magicPrompt);
+      const imageUrl = await this.callGenerateImage(magicPrompt, Math.floor(Math.random() * 2147483647));
 
       if (imageUrl) {
         const processedImage = await processLineArtImage(imageUrl, 800);
@@ -1209,18 +1101,12 @@ export class GdmLiveAudio extends LitElement {
   private toggleGallery(show: boolean) {
     this.showGallery = show;
   }
-  
-  private toggleEngine() {
-    if (this.drawingEngine === 'ideogram') this.drawingEngine = 'google';
-    else if (this.drawingEngine === 'google') this.drawingEngine = 'replicate';
-    else this.drawingEngine = 'ideogram';
-  }
 
   render() {
     return html`
       <div id="status">${this.status}</div>
-      <div class="engine-switch" @click="${this.toggleEngine}">
-        画师: ${this.drawingEngine === 'ideogram' ? '灵犀 (I)' : this.drawingEngine === 'google' ? '妙笔 (G)' : '幻影 (R)'}
+      <div class="engine-switch">
+        画师: 灵犀 (Ideogram)
       </div>
       <gdm-live-audio-visuals-3d .inputNode="${this.inputNode}" .outputNode="${this.outputNode}"></gdm-live-audio-visuals-3d>
 
