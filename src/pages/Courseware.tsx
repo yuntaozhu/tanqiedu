@@ -347,7 +347,6 @@ export default function Courseware() {
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef({ x: 0, y: 0 });
   const connectedRef = useRef(false);
-  const c4SwitchSent = useRef(false);
   const rewardCued = useRef(false);
   const sendQuietRef = useRef<(action: string) => Promise<unknown>>(async () => {});
   const cuerRef = useRef<ReturnType<typeof createBumiCuer> | null>(null);
@@ -499,14 +498,6 @@ export default function Courseware() {
     );
   }
   const { cue, cueColor, cueFail, cueWin } = cuerRef.current;
-
-  useEffect(() => {
-    if (activeCourseId === 'c4' && isRobotConnected && !c4SwitchSent.current) {
-      c4SwitchSent.current = true;
-      cue('switch', 0);
-    }
-    if (activeCourseId !== 'c4') c4SwitchSent.current = false;
-  }, [activeCourseId, isRobotConnected, cue]);
 
   useEffect(() => {
     if (activeCourseId === 'c4' && currentPage?.type === 'reward' && isRobotConnected) {
@@ -730,7 +721,7 @@ export default function Courseware() {
               )}
 
               {currentPage.type === 'forest_search' && (
-                 <ForestSearchGame onPlay={() => cue('switch')} onEnded={() => cueWin()} />
+                 <ForestSearchGame onEnded={() => cueWin()} />
               )}
 
               {currentPage.type === 'color_prep' && (

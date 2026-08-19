@@ -16,7 +16,6 @@ export default function Tools() {
   const [dockMore, setDockMore] = useState(false);
 
   const connectedRef = useRef(false);
-  const toolSwitchSent = useRef(false);
   const sendQuietRef = useRef<(action: string) => Promise<unknown>>(async () => {});
   const cuerRef = useRef<ReturnType<typeof createBumiCuer> | null>(null);
 
@@ -44,14 +43,6 @@ export default function Tools() {
     window.addEventListener(BUMI_TOOL_EVENT, onCue);
     return () => window.removeEventListener(BUMI_TOOL_EVENT, onCue);
   }, [cue]);
-
-  useEffect(() => {
-    if (activeTool === 'print-my-dream' && isRobotConnected && !toolSwitchSent.current) {
-      toolSwitchSent.current = true;
-      cue('switch', 0);
-    }
-    if (activeTool !== 'print-my-dream') toolSwitchSent.current = false;
-  }, [activeTool, isRobotConnected, cue]);
 
   const handleConnectRobot = async () => {
     if (isRobotConnected) {
