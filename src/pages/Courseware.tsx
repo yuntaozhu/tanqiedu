@@ -19,6 +19,7 @@ import {
   ShapeForestSearchGame, ShapeMagicChestGame, ShapeAnimalConnectGame,
   ShapeColoringGame as ShapeColoringCanvas, ShapeBuildingBlocksGame, ShapeSudokuGame
 } from '../components/ShapeKingdomGames';
+import { BUMI_ACTIONS, bumiCmd, bumiState, bumiBaseUrl } from '../lib/bumi';
 
 // 1. Two-level Mock Data Structure (Phase 2 with 10 TPR Pages)
 const mockData = [
@@ -29,7 +30,7 @@ const mockData = [
       // 1. Cover
       { id: "p1", type: "book_page", content: "https://placehold.co/800x800/2dd4bf/ffffff?text=What+Do+I+See%3F&font=Montserrat", text: "What Do I See?" },
       // 2. TPR Introduce "See"
-      { id: "p2", type: "robot_explain", content: "Make binoculars like this! 'I see...'", robotEvent: { action: "START", duration: 2500 } },
+      { id: "p2", type: "robot_explain", content: "Make binoculars like this! 'I see...'", robotEvent: { action: "SWITCH", duration: 2500 } },
       // 3. Book: One
       { id: "p3", type: "book_page", content: "https://placehold.co/800x1200/fcd34d/ffffff?text=Sandcastle", text: "I see one." },
       // 4. Book: Two + TPR Practice
@@ -136,6 +137,28 @@ const mockData = [
       { id: "p5_8", type: "shape_building_blocks" },
       { id: "p5_9", type: "shape_sudoku" },
       { id: "p5_10", type: "reward", content: "形状王国终极挑战达标！" }
+    ]
+  },
+  {
+    id: "c6",
+    title: "小布米配合上课（动作枚举）",
+    pages: [
+      { id: "b0", type: "robot_explain", content: "上课前先点底部「外联小布米」，再点准备。", robotEvent: { action: "SWITCH", duration: 3000 } },
+      { id: "b1", type: "robot_practice", content: "挥手打招呼 👋", robotEvent: { action: "SWING", duration: 3500 } },
+      { id: "b2", type: "robot_practice", content: "握手交朋友 🤝", robotEvent: { action: "SHAKE", duration: 3500 } },
+      { id: "b3", type: "robot_practice", content: "欢呼庆祝 🎉", robotEvent: { action: "CHEER", duration: 3500 } },
+      { id: "b16", type: "robot_practice", content: "擦眼泪 😢", robotEvent: { action: "TEAR", duration: 3500 } },
+      { id: "b17", type: "robot_explain", content: "安全停止", robotEvent: { action: "DEFAULT", duration: 1500 } },
+      { id: "b5", type: "robot_explain", content: "使能（已在使能/准备时不会重复发送）", robotEvent: { action: "START", duration: 2000 } },
+      { id: "b12", type: "robot_explain", content: "起身 ⚠️ 需平坦地面、有人在旁", robotEvent: { action: "FALLTOSTAND", duration: 8000 } },
+      { id: "b0w", type: "robot_explain", content: "慢走 ⚠️ 周围留空", robotEvent: { action: "WALK", duration: 3000 } },
+      { id: "b13", type: "robot_explain", content: "躺下 ⚠️", robotEvent: { action: "STANDTOFALL", duration: 6000 } },
+      { id: "b11", type: "robot_explain", content: "舞蹈1 ⚠️ 需足够空间", robotEvent: { action: "DANCE", duration: 8000 } },
+      { id: "b14", type: "robot_explain", content: "舞蹈2 ⚠️", robotEvent: { action: "DANCE1", duration: 8000 } },
+      { id: "b15", type: "robot_explain", content: "舞蹈3 ⚠️", robotEvent: { action: "DANCE2", duration: 8000 } },
+      { id: "b7", type: "robot_explain", content: "开始示教", robotEvent: { action: "STARTTEACH", duration: 2000 } },
+      { id: "b8", type: "robot_explain", content: "保存示教", robotEvent: { action: "SAVETEACH", duration: 2000 } },
+      { id: "b10", type: "robot_explain", content: "播放示教", robotEvent: { action: "PLAYTEACH", duration: 4000 } },
     ]
   }
 ];
@@ -311,6 +334,7 @@ export default function Courseware() {
   const [drawMode, setDrawMode] = useState<'none' | 'pen' | 'eraser'>('none');
   const [isRobotConnected, setIsRobotConnected] = useState(false);
   const [robotStatus, setRobotStatus] = useState<'idle' | 'executing' | 'done'>('idle');
+  const [robotHint, setRobotHint] = useState('未连接 · 请先开 bumi_server.py');
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   
   // Refs
@@ -418,9 +442,37 @@ export default function Courseware() {
   };
 
   // --- Actions ---
-  const handleConnectRobot = () => {
-     alert(isRobotConnected ? "已断开与小布米的连接。" : "连接成功！小布米已就绪 (TPR感知服务已启动)。");
-     setIsRobotConnected(!isRobotConnected);
+  const handleConnectRobot = async () => {
+    if (isRobotConnected) {
+      setIsRobotConnected(false);
+      setRobotHint('已断开');
+      return;
+    }
+    try {
+      const s = await bumiState();
+      if (!s.ok) throw new Error('bumi_server 未就绪');
+      setIsRobotConnected(true);
+      setRobotHint(
+        s.connected
+          ? `已连接 ${bumiBaseUrl()} · Mode ${s.mode} (${s.mode_name || '?'}) · ${s.battery}%`
+          : `服务在 ${bumiBaseUrl()}，机器人离线`
+      );
+    } catch (e: any) {
+      setIsRobotConnected(false);
+      alert(`连不上小布米。\n请在上课电脑运行: python scripts\\bumi_server.py\n默认地址 ${bumiBaseUrl()}\n${e?.message || e}`);
+    }
+  };
+
+  const sendBumi = async (action: string | number) => {
+    const meta = BUMI_ACTIONS.find(
+      (a) => a.id === String(action).toLowerCase() || a.code === Number(action) || a.id.toUpperCase() === String(action)
+    );
+    if (meta?.danger && !confirm(`危险动作「${meta.name}」：地面平整、周围留空、有人在旁？`)) return null;
+    const data = await bumiCmd(action);
+    setRobotHint(
+      `已发 ${meta?.name || action} · mode=${data.mode ?? '?'} ${data.ok ? '' : (data.error || '')}`
+    );
+    return data;
   };
 
   const handlePraise = () => {
@@ -452,19 +504,25 @@ export default function Courseware() {
      }
   };
 
-  const triggerRobotAction = () => {
+  const triggerRobotAction = async () => {
     if (robotStatus === 'executing' || !currentPage?.robotEvent) return;
     if (!isRobotConnected) {
        alert("请先在底部栏点击「外联小布米」！");
        return;
     }
-    
+
     setRobotStatus('executing');
-    
-    // Simulate robotic action delay and visual completion
+    try {
+      await sendBumi(currentPage.robotEvent.action);
+    } catch (e: any) {
+      setRobotStatus('idle');
+      alert(`指令发送失败: ${e?.message || e}\n确认 bumi_server.py 已开，且本页允许访问 127.0.0.1:9550`);
+      return;
+    }
+
     setTimeout(() => {
       setRobotStatus('done');
-      if (currentPage.type !== 'robot_test') { // Don't confetti immediately on test mode
+      if (currentPage.type !== 'robot_test') {
           confetti({
              particleCount: 80, spread: 60, origin: { y: 0.6 },
              colors: ['#3b82f6', '#10b981']
@@ -786,6 +844,29 @@ export default function Courseware() {
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Bumi action dock */}
+        {isRobotConnected && (
+          <div className="bg-slate-950 border-t border-slate-800 px-3 py-2 shrink-0">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-mono text-emerald-400 tracking-wider">BUMI ACTIONS · 0走路 1挥手 2握手 3欢呼 5使能 6准备 7示教 8保存 10播放 11舞1 12起身 13躺下 14舞2 15舞3 16擦泪 17停止</span>
+              <span className="text-[10px] text-slate-500 truncate max-w-[40%]">{robotHint}</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {BUMI_ACTIONS.map((a) => (
+                <button
+                  key={a.code}
+                  title={`${a.code}=${a.name}`}
+                  onClick={() => sendBumi(a.id).catch((e) => alert(e?.message || e))}
+                  className={`px-2 py-1 rounded-md text-[11px] font-bold border transition
+                    ${a.danger ? 'border-orange-800/80 bg-orange-950/40 text-orange-200 hover:bg-orange-900/50' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+                >
+                  {a.code} {a.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* --- Toolbar Area (按钮区) --- */}
         <div className="h-20 bg-slate-900 border-t border-slate-800 flex items-center justify-between px-4 overflow-x-auto shrink-0 z-50 pointer-events-auto">
