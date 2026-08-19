@@ -1,12 +1,90 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, X, MonitorPlay, Blocks } from 'lucide-react';
+import { Printer, X, MonitorPlay, Blocks, Power, PowerOff, ChevronsUpDown } from 'lucide-react';
+import {
+  BUMI_ACTIONS, BUMI_CLASSROOM_SAFE, BUMI_TOOL_EVENT, bumiCmd, bumiState, bumiBaseUrl,
+  createBumiCuer, type BumiToolKind,
+} from '../lib/bumi';
 
 // Side-effect import for the legacy custom element
 import '../legacy/ToddlerDrawingDreamer';
 
 export default function Tools() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [isRobotConnected, setIsRobotConnected] = useState(false);
+  const [robotHint, setRobotHint] = useState('未连接 · 上课电脑请先开 bumi_server.py');
+  const [dockMore, setDockMore] = useState(false);
+
+  const connectedRef = useRef(false);
+  const toolSwitchSent = useRef(false);
+  const sendQuietRef = useRef<(action: string) => Promise<unknown>>(async () => {});
+  const cuerRef = useRef<ReturnType<typeof createBumiCuer> | null>(null);
+
+  connectedRef.current = isRobotConnected;
+  sendQuietRef.current = async (action: string) => {
+    const data = await bumiCmd(action);
+    const meta = BUMI_ACTIONS.find((a) => a.id === action || a.id.toUpperCase() === action);
+    setRobotHint(`工具 ${meta?.name || action} · mode=${data.mode ?? '?'}`);
+    return data;
+  };
+  if (!cuerRef.current) {
+    cuerRef.current = createBumiCuer(
+      () => connectedRef.current,
+      (action) => sendQuietRef.current(action)
+    );
+  }
+  const { cue } = cuerRef.current;
+
+  useEffect(() => {
+    const onCue = (e: Event) => {
+      const kind = (e as CustomEvent<{ kind: BumiToolKind }>).detail?.kind;
+      if (kind === 'draw' || kind === 'generate') cue('swing', 4000);
+      if (kind === 'print') cue('cheer', 3000);
+    };
+    window.addEventListener(BUMI_TOOL_EVENT, onCue);
+    return () => window.removeEventListener(BUMI_TOOL_EVENT, onCue);
+  }, [cue]);
+
+  useEffect(() => {
+    if (activeTool === 'print-my-dream' && isRobotConnected && !toolSwitchSent.current) {
+      toolSwitchSent.current = true;
+      cue('switch', 0);
+    }
+    if (activeTool !== 'print-my-dream') toolSwitchSent.current = false;
+  }, [activeTool, isRobotConnected, cue]);
+
+  const handleConnectRobot = async () => {
+    if (isRobotConnected) {
+      setIsRobotConnected(false);
+      setRobotHint('已断开');
+      return;
+    }
+    try {
+      const s = await bumiState();
+      if (!s.ok) throw new Error('bumi_server 未就绪');
+      setIsRobotConnected(true);
+      setRobotHint(
+        s.connected
+          ? `已连接 ${bumiBaseUrl()} · Mode ${s.mode} (${s.mode_name || '?'}) · ${s.battery}%`
+          : `服务在 ${bumiBaseUrl()}，机器人离线`
+      );
+    } catch (e: any) {
+      setIsRobotConnected(false);
+      alert(`连不上小布米。\n请在上课电脑运行: python scripts\\bumi_server.py\n默认地址 ${bumiBaseUrl()}\n${e?.message || e}`);
+    }
+  };
+
+  const sendBumi = async (action: string | number) => {
+    const meta = BUMI_ACTIONS.find(
+      (a) => a.id === String(action).toLowerCase() || a.code === Number(action) || a.id.toUpperCase() === String(action)
+    );
+    if (meta?.danger && !confirm(`危险动作「${meta.name}」：地面平整、周围留空、有人在旁？`)) return null;
+    const data = await bumiCmd(action);
+    setRobotHint(
+      `已发 ${meta?.name || action} · mode=${data.mode ?? '?'} ${data.ok ? '' : (data.error || '')}`
+    );
+    return data;
+  };
 
   const tools = [
     {
@@ -38,6 +116,46 @@ export default function Tools() {
     }
   ];
 
+  const dock = (
+    <div className="bg-slate-950/90 backdrop-blur-md border border-slate-700 rounded-2xl px-3 py-2 shadow-xl">
+      <div className="flex items-center gap-2 mb-1.5">
+        <button
+          type="button"
+          onClick={handleConnectRobot}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border shrink-0
+            ${isRobotConnected ? 'bg-emerald-500/20 text-emerald-300 border-emerald-600' : 'bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700'}`}
+        >
+          {isRobotConnected ? <PowerOff size={12} /> : <Power size={12} />}
+          {isRobotConnected ? '断开小布米' : '外联小布米'}
+        </button>
+        <span className="text-[10px] text-slate-400 truncate">{robotHint}</span>
+      </div>
+      {isRobotConnected && (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {(dockMore ? BUMI_ACTIONS : BUMI_ACTIONS.filter((a) => BUMI_CLASSROOM_SAFE.includes(a.id))).map((a) => (
+            <button
+              key={a.code}
+              title={`${a.code}=${a.name}`}
+              onClick={() => sendBumi(a.id).catch((err) => alert(err?.message || err))}
+              className={`px-2 py-1 rounded-md text-[11px] font-bold border transition
+                ${a.danger ? 'border-orange-800/80 bg-orange-950/40 text-orange-200 hover:bg-orange-900/50' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+            >
+              {a.code} {a.name}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setDockMore((v) => !v)}
+            className="px-2 py-1 rounded-md text-[11px] font-bold border border-slate-600 bg-slate-900 text-slate-300 hover:bg-slate-800 flex items-center gap-1"
+          >
+            <ChevronsUpDown size={12} />
+            {dockMore ? '收起' : '更多'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   if (activeTool === 'print-my-dream') {
     return (
       <div className="fixed inset-0 z-[100] bg-black">
@@ -47,6 +165,9 @@ export default function Tools() {
         >
           <X size={24} />
         </button>
+        <div className="absolute bottom-3 left-4 right-24 z-[999] max-w-2xl pointer-events-auto">
+          {dock}
+        </div>
         {/* Render the Web Component directly */}
         <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: '<gdm-live-audio></gdm-live-audio>' }} />
       </div>
@@ -55,9 +176,10 @@ export default function Tools() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 w-full py-12">
-      <div className="text-center mb-16">
+      <div className="text-center mb-10">
         <h1 className="text-4xl font-black text-slate-900 mb-4">赋能孩子的想象力</h1>
-        <p className="text-xl text-slate-500">探奇特色的多模态 AI 生成与交互体验矩阵</p>
+        <p className="text-xl text-slate-500 mb-6">探奇特色的多模态 AI 生成与交互体验矩阵</p>
+        <div className="max-w-2xl mx-auto text-left">{dock}</div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">

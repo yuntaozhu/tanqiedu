@@ -8,6 +8,7 @@ import { LitElement, css, html, PropertyValues, nothing } from 'lit';
 import { state, query } from 'lit/decorators.js';
 import { processLineArtImage } from '../../utils';
 import { GoogleApiService, IdeogramApiService, ReplicateApiService } from '../../lib/api';
+import { emitBumiToolCue } from '../lib/bumi';
 import {
   doubaoChat,
   doubaoVoice,
@@ -99,6 +100,7 @@ export class GdmLiveAudio extends LitElement {
     } else {
       this.activeDrawingPanelId = panelId;
       this.status = "请挥毫落纸。";
+      emitBumiToolCue('draw');
     }
   }
 
@@ -131,6 +133,7 @@ export class GdmLiveAudio extends LitElement {
     const ctx = canvas.getContext('2d')!;
     ctx.beginPath();
     ctx.moveTo(this.lastX, this.lastY);
+    emitBumiToolCue('draw');
   }
 
   private onCanvasPointerMove(e: PointerEvent) {
@@ -759,12 +762,14 @@ export class GdmLiveAudio extends LitElement {
   }
 
   private handlePrint() {
+    emitBumiToolCue('print');
     window.print();
   }
 
   private async printSinglePanel(panel: StoryPanel) {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+    emitBumiToolCue('print');
     printWindow.document.write(`
       <html>
         <head>
@@ -923,6 +928,7 @@ export class GdmLiveAudio extends LitElement {
       timestamp: Date.now(),
     }];
     this.status = '正在作画...';
+    emitBumiToolCue('generate');
 
     try {
       if (this.seed === undefined) this.seed = Math.floor(Math.random() * 2147483647);
@@ -980,6 +986,7 @@ export class GdmLiveAudio extends LitElement {
     if (this.isProcessingTool) return;
     this.status = `正在施展闪耀魔法...`;
     this.isProcessingTool = true;
+    emitBumiToolCue('generate');
     try {
       const magicPrompt = `${panel.prompt}, 画面充满魔法闪光，梦幻气息`;
       

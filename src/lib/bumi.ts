@@ -116,6 +116,16 @@ export async function bumiState(): Promise<any> {
   return r.json();
 }
 
+export const BUMI_TOOL_EVENT = "bumi-tool-cue";
+export type BumiToolKind = "draw" | "print" | "generate";
+
+/** Lit 造梦打印机跨 Shadow DOM 通知课件/工具页发动作 */
+export function emitBumiToolCue(kind: BumiToolKind) {
+  try {
+    window.dispatchEvent(new CustomEvent(BUMI_TOOL_EVENT, { detail: { kind } }));
+  } catch {}
+}
+
 export async function bumiCmd(
   action: string | number,
   extra: { ver?: number; hor?: number } = {}
