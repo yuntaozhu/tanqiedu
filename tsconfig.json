@@ -23,5 +23,5 @@
     "emitDecoratorMetadata": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "*.ts", "*.tsx"]
+  "include": ["src", "lib", "*.ts", "*.tsx"]
 }

@@ -13,7 +13,7 @@ export default function Tools() {
       id: 'print-my-dream',
       title: '造梦打印机',
       subtitle: 'Print My Dream',
-      desc: '语音描述想象，大模型为你生成线稿，并控制小布米打印出物理画纸供孩子涂色。',
+      desc: '用小探宝语音聊天，想好了说画出来；Ideogram 生成线稿，可打印给孩子涂色。',
       icon: Printer,
       color: 'bg-blue-500',
       bgImg: 'https://picsum.photos/seed/drawingart/400/300'

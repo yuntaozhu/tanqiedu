@@ -6,35 +6,24 @@
 
 import { LitElement, css, html, PropertyValues, nothing } from 'lit';
 import { state, query } from 'lit/decorators.js';
-import { createBlob, decode, decodeAudioData, processLineArtImage } from '../../utils';
+import { processLineArtImage } from '../../utils';
 import { GoogleApiService, IdeogramApiService, ReplicateApiService } from '../../lib/api';
-import { LiveServerMessage, FunctionDeclaration, Type } from '@google/genai';
+import {
+  doubaoChat,
+  doubaoVoice,
+  doubaoResetConversation,
+  DoubaoSilentError,
+  DoubaoTurn,
+  concatInt16,
+  drawingPromptFromTurn,
+  floatToPcm16,
+  pcm16ToWav,
+  playTtsBase64,
+  rms,
+  wantsDrawing,
+} from '../../lib/tanqiDoubao';
 import '../../visual-3d';
 import '../../log-viewer';
-
-declare global {
-  interface Window {
-    aistudio: {
-      hasSelectedApiKey: () => Promise<boolean>;
-      openSelectKey: () => Promise<void>;
-    };
-  }
-}
-
-const GENERATE_DRAWING_TOOL: FunctionDeclaration = {
-  name: 'generate_drawing',
-  description: '生成一张黑白线条画。',
-  parameters: {
-    type: Type.OBJECT,
-    properties: {
-      prompt: {
-        type: Type.STRING,
-        description: '要绘画内容的详细描述。必须是纯视觉描述，不要包含文字。',
-      },
-    },
-    required: ['prompt'],
-  },
-};
 
 type EngineType = 'google' | 'ideogram' | 'replicate';
 
@@ -174,8 +163,15 @@ export class GdmLiveAudio extends LitElement {
   }
 
   private _currentSessionId = 0;
-  private isSocketPoisoned = false;
   private isProcessingTool = false;
+  private pcmChunks: Int16Array[] = [];
+  private pcmSampleCount = 0;
+  private speechStarted = false;
+  private silenceMs = 0;
+  private isPlayingTts = false;
+  private voiceInFlight = false;
+  private hadConversation = false;
+  private mediaSourceNode: MediaStreamAudioSourceNode | null = null;
 
   @query('.paper-scroll-container')
   private scrollContainer!: HTMLDivElement;
@@ -190,7 +186,6 @@ export class GdmLiveAudio extends LitElement {
   @state() inputNode = this.inputAudioContext.createGain();
   @state() outputNode = this.outputAudioContext.createGain();
   
-  private nextStartTime = 0;
   private mediaStream: MediaStream | null = null;
   private audioWorkletNode: AudioWorkletNode | null = null;
   private isWorkletInitialized = false;
@@ -678,7 +673,7 @@ export class GdmLiveAudio extends LitElement {
   `;
 
   protected async firstUpdated() {
-    this.status = '探奇画院已开张，请赐画题。';
+    this.status = '探奇画院已开张。先和小探宝聊，想好了再说画出来。';
     this.loadPersistence();
   }
 
@@ -898,69 +893,87 @@ export class GdmLiveAudio extends LitElement {
     return null;
   }
 
-  private async handleTextSubmit(e?: Event) {
-    if (e) e.preventDefault();
-    const prompt = this.textInputValue.trim();
-    if (!prompt) return;
+  private async onDoubaoTurn(data: DoubaoTurn) {
+    this.hadConversation = true;
+    const reply = (data.text_response || '').trim();
+    if (reply) this.status = reply;
 
-    this.textInputValue = '';
-    this.status = `正在挥毫：${prompt}...`;
-    this.isProcessingTool = true;
+    this.isPlayingTts = true;
+    try {
+      await playTtsBase64(data.audio_base64);
+    } finally {
+      this.isPlayingTts = false;
+    }
 
+    if (wantsDrawing(data)) {
+      const prompt = drawingPromptFromTurn(data);
+      if (prompt) {
+        void this.addIdeogramPanel(prompt);
+      }
+    }
+  }
+
+  private async addIdeogramPanel(prompt: string) {
     const panelId = Date.now().toString();
-    // 1. Immediate UI Feedback: Add a "processing" panel to the scroll
-    this.storyPanels = [...this.storyPanels, { 
-      id: panelId, 
-      url: '', 
-      prompt, 
-      title: '正在构思...', 
-      timestamp: Date.now() 
+    this.storyPanels = [...this.storyPanels, {
+      id: panelId,
+      url: '',
+      prompt,
+      title: '正在构思...',
+      timestamp: Date.now(),
     }];
+    this.status = '正在作画...';
 
     try {
       if (this.seed === undefined) this.seed = Math.floor(Math.random() * 2147483647);
-      
-      // Start translation and summarization in parallel
+
       const englishPromptPromise = this.translatePrompt(prompt);
       const titlePromise = this.summarizePrompt(prompt);
-      const protagonistPromise = (!this.protagonistDescription && this.storyPanels.length <= 1) 
-          ? this.extractProtagonist(prompt) 
-          : Promise.resolve(null);
+      const protagonistPromise = (!this.protagonistDescription && this.storyPanels.length <= 1)
+        ? this.extractProtagonist(prompt)
+        : Promise.resolve(null);
 
       const englishPrompt = await englishPromptPromise;
-      
-      // Start image generation immediately after we have the translated prompt
       const imageUrlPromise = this.callGenerateImage(englishPrompt, this.seed);
-      
-      // While image is generating, we can resolve other metadata
       const [newProtagonist, kidFriendlyTitle] = await Promise.all([protagonistPromise, titlePromise]);
-      
-      if (newProtagonist) {
-          this.protagonistDescription = newProtagonist;
-      }
-      
-      const imageUrl = await imageUrlPromise;
+      if (newProtagonist) this.protagonistDescription = newProtagonist;
 
-      if (imageUrl) {
-        const processedImage = await processLineArtImage(imageUrl, 800);
-        if (!this.anchorImageBase64 && this.storyPanels.length <= 1) {
-          this.anchorImageBase64 = processedImage;
-        }
-        
-        // Update the existing panel instead of pushing a new one
-        this.storyPanels = this.storyPanels.map(p => 
-          p.id === panelId ? { ...p, url: processedImage, title: kidFriendlyTitle } : p
-        );
-        this.status = '画成。';
-        this.savePersistence();
-      } else {
-        throw new Error('Image generation returned null from all engines');
+      const imageUrl = await imageUrlPromise;
+      if (!imageUrl) throw new Error('Image generation returned null from all engines');
+
+      const processedImage = await processLineArtImage(imageUrl, 800);
+      if (!this.anchorImageBase64 && this.storyPanels.length <= 1) {
+        this.anchorImageBase64 = processedImage;
       }
+      this.storyPanels = this.storyPanels.map(p =>
+        p.id === panelId ? { ...p, url: processedImage, title: kidFriendlyTitle } : p
+      );
+      this.status = '画成。';
+      this.savePersistence();
     } catch (err) {
       console.error(err);
       this.storyPanels = this.storyPanels.filter(p => p.id !== panelId);
       this.status = '笔墨受阻，请稍后再试。';
-    } finally { this.isProcessingTool = false; }
+    }
+  }
+
+  private async handleTextSubmit(e?: Event) {
+    if (e) e.preventDefault();
+    const prompt = this.textInputValue.trim();
+    if (!prompt || this.voiceInFlight) return;
+
+    this.textInputValue = '';
+    this.status = '小探宝在听...';
+    this.voiceInFlight = true;
+    try {
+      const data = await doubaoChat(prompt);
+      await this.onDoubaoTurn(data);
+    } catch (err) {
+      console.error(err);
+      this.status = '小探宝走神了，请再说一次。';
+    } finally {
+      this.voiceInFlight = false;
+    }
   }
 
   private async handleSparkleRemix(panel: StoryPanel) {
@@ -990,194 +1003,127 @@ export class GdmLiveAudio extends LitElement {
     } catch (err) { this.status = '咒语失效。'; } finally { this.isProcessingTool = false; }
   }
 
+  private resetVadBuffer() {
+    this.pcmChunks = [];
+    this.pcmSampleCount = 0;
+    this.speechStarted = false;
+    this.silenceMs = 0;
+  }
+
+  private async flushUtterance() {
+    if (this.voiceInFlight || this.isPlayingTts) return;
+    this.voiceInFlight = true;
+    const pcm = concatInt16(this.pcmChunks);
+    this.resetVadBuffer();
+    // ~0.4s of 16kHz audio
+    if (pcm.length < 6400 && !this.hadConversation) {
+      this.voiceInFlight = false;
+      return;
+    }
+    this.status = '小探宝在听...';
+    try {
+      const wav = pcm16ToWav(pcm);
+      const data = await doubaoVoice(wav);
+      await this.onDoubaoTurn(data);
+    } catch (err) {
+      if (err instanceof DoubaoSilentError) {
+        this.status = '请靠近麦克风再说一次。';
+      } else {
+        console.error(err);
+        this.status = '小探宝走神了，请再说一次。';
+      }
+    } finally {
+      this.voiceInFlight = false;
+    }
+  }
+
+  private onPcmChunk(float32: Float32Array) {
+    if (!this.isRecording || this.isMuted || this.isPlayingTts || this.voiceInFlight) return;
+    const energy = rms(float32);
+    const chunkMs = (float32.length / 16000) * 1000;
+    const speaking = energy > 0.018;
+
+    if (speaking) {
+      this.speechStarted = true;
+      this.silenceMs = 0;
+      this.pcmChunks.push(floatToPcm16(float32));
+      this.pcmSampleCount += float32.length;
+    } else if (this.speechStarted) {
+      this.pcmChunks.push(floatToPcm16(float32));
+      this.pcmSampleCount += float32.length;
+      this.silenceMs += chunkMs;
+    }
+
+    const utteredMs = (this.pcmSampleCount / 16000) * 1000;
+    if (this.speechStarted && (this.silenceMs >= 900 || utteredMs >= 8000)) {
+      void this.flushUtterance();
+    }
+  }
+
   private async stopRecording() {
     this.isRecording = false;
-    this.isSocketPoisoned = true;
     this.isConnecting = false;
-    this._currentSessionId++; 
+    this._currentSessionId++;
+    this.resetVadBuffer();
     if (this.audioWorkletNode) {
-      this.audioWorkletNode.port.onmessage = null; 
+      this.audioWorkletNode.port.onmessage = null;
       this.audioWorkletNode.disconnect();
       this.audioWorkletNode = null;
+    }
+    if (this.mediaSourceNode) {
+      this.mediaSourceNode.disconnect();
+      this.mediaSourceNode = null;
     }
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach(track => track.stop());
       this.mediaStream = null;
     }
-    await this.googleApi.close();
     this.status = '画师已歇息。';
   }
 
   private async connectLive() {
-    if (this.isConnecting) return;
-
-    // Check for API key selection if in AI Studio environment
-    if (window.aistudio) {
-      const hasKey = await window.aistudio.hasSelectedApiKey();
-      if (!hasKey) {
-        this.status = '请先选择 API Key 以启动探奇画院。';
-        await window.aistudio.openSelectKey();
-        // Proceed after dialog closes (assuming success as per guidelines)
-      }
-    }
+    if (this.isConnecting || this.isRecording) return;
 
     this._currentSessionId++;
     const mySessionId = this._currentSessionId;
     this.isConnecting = true;
     this.status = '正在铺卷...';
     try {
-      await Promise.all([this.inputAudioContext.resume(), this.outputAudioContext.resume()]);
+      await this.inputAudioContext.resume();
       this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (this._currentSessionId !== mySessionId) return;
       if (!this.isWorkletInitialized) {
         const blob = new Blob([AUDIO_WORKLET_SRC], { type: 'application/javascript' });
         await this.inputAudioContext.audioWorklet.addModule(URL.createObjectURL(blob));
         this.isWorkletInitialized = true;
       }
-      const sessionPromise = this.googleApi.connectLive({
-        model: 'gemini-3.1-flash-live-preview',
-        systemInstruction: `你是绘画大师"探奇"。
-        1. 严禁用任何英文或拼音交流。
-        2. 说话语气要像温柔的幼儿园老师。
-        3. 严禁在给 generate_drawing 的指令中包含任何英文。
-        4. 当用户说"开始作画"、"开始画画"、"开始画"、"开始画图"、"帮我画一个"或表达出想看画的意思时，你必须立即结合之前的聊天内容，总结出一个丰富的黑白线条画视觉描述作为 prompt 调用 generate_drawing。
-        5. 对话中要引导孩子多描述细节，捕捉他们的想象力，然后再根据这些细节开始作画。
-        目前锁定的主角是：${this.protagonistDescription || '未定'}。`,
-        tools: [{ functionDeclarations: [GENERATE_DRAWING_TOOL] }],
-        callbacks: {
-          onopen: async () => {
-            if (this._currentSessionId !== mySessionId) return;
-            this.isRecording = true;
-            this.isConnecting = false;
-            this.status = '请赐题。';
-            const source = this.inputAudioContext.createMediaStreamSource(this.mediaStream!);
-            this.audioWorkletNode = new AudioWorkletNode(this.inputAudioContext, 'pcm-processor');
-            this.audioWorkletNode.port.onmessage = async (event) => {
-              if (this.isSocketPoisoned || !this.isRecording || this.isMuted || this.isProcessingTool) return;
-              try { 
-                const session = await sessionPromise;
-                session.sendRealtimeInput({ audio: createBlob(event.data) });
-              } catch (e) { 
-                this.isSocketPoisoned = true; 
-              }
-            };
-            source.connect(this.inputNode);
-            this.inputNode.connect(this.audioWorkletNode);
-          },
-          onmessage: async (message: LiveServerMessage) => {
-            if (this._currentSessionId !== mySessionId) return;
-            if (message.serverContent?.interrupted) {
-              // Clear upcoming audio queue on interruption
-              this.nextStartTime = this.outputAudioContext.currentTime;
-              this.outputNode.gain.cancelScheduledValues(this.nextStartTime);
-              // Note: We might want to stop currently playing source, but that's complex with the current buffer source strategy
-            }
-
-            if (message.toolCall && message.toolCall.functionCalls) {
-              for (const fc of message.toolCall.functionCalls) {
-                if (fc.name === 'generate_drawing') {
-                  this.isProcessingTool = true;
-                  const prompt = (fc.args as any).prompt;
-                  const panelId = Date.now().toString();
-                  
-                  // 1. Immediate UI Feedback: Add a "processing" panel to the scroll
-                  this.storyPanels = [...this.storyPanels, { 
-                    id: panelId, 
-                    url: '', // Empty URL indicates loading state in UI
-                    prompt, 
-                    title: '正在构思...', 
-                    timestamp: Date.now() 
-                  }];
-                  this.status = `正在作画...`;
-
-                  // 2. Parallelize everything
-                  (async () => {
-                    try {
-                      // Start translation and summarization in parallel
-                      const translatePromise = this.translatePrompt(prompt);
-                      const titlePromise = this.summarizePrompt(prompt);
-                      
-                      const englishPrompt = await translatePromise;
-                      
-                      // Start generation as soon as we have the english prompt
-                      const imageUrl = await this.callGenerateImage(englishPrompt, this.seed);
-                      
-                      if (imageUrl) {
-                        const processed = await processLineArtImage(imageUrl, 800);
-                        if (!this.anchorImageBase64) this.anchorImageBase64 = processed;
-                        
-                        const title = await titlePromise;
-                        
-                        // Update the existing panel instead of pushing a new one
-                        this.storyPanels = this.storyPanels.map(p => 
-                          p.id === panelId ? { ...p, url: processed, title } : p
-                        );
-                        this.savePersistence();
-                      } else {
-                        // Handle failure: remove the placeholder or show error
-                        this.storyPanels = this.storyPanels.filter(p => p.id !== panelId);
-                        this.status = "画师探奇累了，请稍后再试。";
-                      }
-                      
-                      const session = await sessionPromise;
-                      session.sendToolResponse({
-                        functionResponses: [{
-                          name: fc.name,
-                          id: (fc as any).id,
-                          response: { result: "已完成绘图并添加到卷轴。" }
-                        }]
-                      });
-                    } catch (err) {
-                      console.error("Drawing tool execution error:", err);
-                      this.storyPanels = this.storyPanels.filter(p => p.id !== panelId);
-                    } finally {
-                      this.isProcessingTool = false;
-                    }
-                  })();
-                }
-              }
-            }
-            
-            // Transcription Support: update input box with user's words
-            const inputTranscript = (message as any).inputTranscription?.text || 
-                                     (message as any).inputAudioTranscription?.text ||
-                                     (message as any).serverContent?.inputTranscription?.text;
-            if (inputTranscript) {
-              this.textInputValue = inputTranscript;
-            }
-
-            const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
-            if (audioData) {
-              const buffer = await decodeAudioData(decode(audioData), this.outputAudioContext, 24000, 1);
-              const source = this.outputAudioContext.createBufferSource();
-              source.buffer = buffer; source.connect(this.outputNode);
-              source.start(this.nextStartTime);
-              this.nextStartTime = Math.max(this.nextStartTime, this.outputAudioContext.currentTime) + buffer.duration;
-            }
-          },
-          onerror: (err) => {
-            console.error("Gemini Live API Error:", err);
-            this.status = '语音引擎故障，请重试。';
-            this.stopRecording();
-          }, 
-          onclose: (ev) => {
-            console.warn("Gemini Live Connection Closed:", ev);
-            this.stopRecording();
-          }
-        }
-      });
+      this.mediaSourceNode = this.inputAudioContext.createMediaStreamSource(this.mediaStream);
+      this.audioWorkletNode = new AudioWorkletNode(this.inputAudioContext, 'pcm-processor');
+      this.audioWorkletNode.port.onmessage = (event) => {
+        if (this._currentSessionId !== mySessionId) return;
+        const data = event.data as Float32Array;
+        this.onPcmChunk(data);
+      };
+      this.mediaSourceNode.connect(this.inputNode);
+      this.inputNode.connect(this.audioWorkletNode);
+      this.resetVadBuffer();
+      this.isRecording = true;
+      this.isConnecting = false;
+      this.status = '请说，想好了可以说画出来。';
     } catch (e: any) {
       this.isConnecting = false;
-      if (e.message?.includes('Requested entity was not found')) {
-        this.status = 'API Key 无效，请重新选择。';
-        if (window.aistudio) await window.aistudio.openSelectKey();
-      } else {
-        this.status = '连接失败，请重试。';
-      }
+      console.error(e);
+      this.status = '麦克风打不开，请检查权限。';
     }
   }
 
   private handleClearScroll() {
-    if (this.storyPanels.length === 0) return;
+    if (this.storyPanels.length === 0) {
+      void doubaoResetConversation();
+      this.hadConversation = false;
+      this.status = '新轴已铺好。';
+      return;
+    }
     if (confirm("是否封存当前画卷，开启新画？")) {
       const newSaved = { 
         id: Date.now().toString(), 
@@ -1190,6 +1136,8 @@ export class GdmLiveAudio extends LitElement {
       this.savedScrolls = [newSaved, ...this.savedScrolls];
       this.storyPanels = []; this.seed = undefined; this.protagonistDescription = ''; this.anchorImageBase64 = '';
       localStorage.removeItem('gdm_current_scroll');
+      this.hadConversation = false;
+      void doubaoResetConversation();
       this.status = '新轴已铺好。';
     }
   }
@@ -1279,7 +1227,7 @@ export class GdmLiveAudio extends LitElement {
       <div class="scroll-handle handle-top"></div>
       <div class="paper-scroll-container">
         <div class="paper-strip">
-          ${this.storyPanels.length === 0 ? html`<div style="margin: 120px 40px; color: #8B4513; text-align: center; font-size: 1.6rem; line-height: 2;">素轴一张待落墨。<br/>请语音或文字输入画题。</div>` : ''}
+          ${this.storyPanels.length === 0 ? html`<div style="margin: 120px 40px; color: #8B4513; text-align: center; font-size: 1.6rem; line-height: 2;">素轴一张待落墨。<br/>先和小探宝聊，想好了再说画出来。</div>` : ''}
           ${this.storyPanels.map(panel => html`
             <div class="story-panel" id="panel-${panel.id}">
               ${panel.url ? html`
@@ -1312,7 +1260,7 @@ export class GdmLiveAudio extends LitElement {
 
       <div class="footer-controls">
         <form class="text-input-bar" @submit="${this.handleTextSubmit}">
-          <input type="text" placeholder="输入你想画的，比如：大恐龙..." .value="${this.textInputValue}" @input="${(e: any) => this.textInputValue = e.target.value}" />
+          <input type="text" placeholder="先聊一聊，想好了再说画出来..." .value="${this.textInputValue}" @input="${(e: any) => this.textInputValue = e.target.value}" />
           <button type="submit" class="send-text-btn">✒️</button>
         </form>
         <div class="controls">
