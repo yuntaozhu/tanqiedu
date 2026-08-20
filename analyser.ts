@@ -11,6 +11,11 @@ export class Analyser {
   private dataArray: Uint8Array;
 
   constructor(node: AudioNode) {
+    if (!node || node.context.state === 'closed') {
+      this.analyser = null as unknown as AnalyserNode;
+      this.dataArray = new Uint8Array(16);
+      return;
+    }
     this.analyser = node.context.createAnalyser();
     this.analyser.fftSize = 32;
     this.bufferLength = this.analyser.frequencyBinCount;
@@ -19,6 +24,7 @@ export class Analyser {
   }
 
   update() {
+    if (!this.analyser) return;
     this.analyser.getByteFrequencyData(this.dataArray as any);
   }
 

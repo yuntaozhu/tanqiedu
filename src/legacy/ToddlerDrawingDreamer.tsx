@@ -677,7 +677,22 @@ export class GdmLiveAudio extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    this.stopRecording();
+    this.isRecording = false;
+    this.isConnecting = false;
+    this._currentSessionId++;
+    if (this.audioWorkletNode) {
+      this.audioWorkletNode.port.onmessage = null;
+      try { this.audioWorkletNode.disconnect(); } catch {}
+      this.audioWorkletNode = null;
+    }
+    if (this.mediaSourceNode) {
+      try { this.mediaSourceNode.disconnect(); } catch {}
+      this.mediaSourceNode = null;
+    }
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
     if (this.inputAudioContext.state !== 'closed') this.inputAudioContext.close().catch(() => {});
     if (this.outputAudioContext.state !== 'closed') this.outputAudioContext.close().catch(() => {});
   }
@@ -835,7 +850,6 @@ export class GdmLiveAudio extends LitElement {
       timestamp: Date.now(),
     }];
     this.status = '正在作画...';
-    emitBumiToolCue('generate');
 
     try {
       if (this.seed === undefined) this.seed = Math.floor(Math.random() * 2147483647);
@@ -843,7 +857,12 @@ export class GdmLiveAudio extends LitElement {
       const imageUrl = await this.callGenerateImage(prompt, this.seed);
       if (!imageUrl) throw new Error('Image generation returned null from Ideogram');
 
-      const processedImage = await processLineArtImage(imageUrl, 800);
+      let processedImage = imageUrl;
+      try {
+        processedImage = await processLineArtImage(imageUrl, 800);
+      } catch (procErr) {
+        console.warn('Line-art process skipped, showing original Ideogram URL', procErr);
+      }
       if (!this.anchorImageBase64 && this.storyPanels.length <= 1) {
         this.anchorImageBase64 = processedImage;
       }
@@ -852,6 +871,7 @@ export class GdmLiveAudio extends LitElement {
       );
       this.status = '画成。';
       this.savePersistence();
+      emitBumiToolCue('generate');
     } catch (err) {
       console.error(err);
       this.storyPanels = this.storyPanels.filter(p => p.id !== panelId);

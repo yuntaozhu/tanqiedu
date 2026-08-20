@@ -86,37 +86,25 @@ export async function processLineArtImage(
       }
       
       // Draw and Resize
-      // This step automatically handles the resizing to the target dimension
       ctx.drawImage(img, 0, 0, size, size);
-      
-      // Get pixel data
-      const imageData = ctx.getImageData(0, 0, size, size);
-      const data = imageData.data;
-      
-      // Binarize (Thresholding)
-      // A high threshold ensures background remains white and only distinct lines become black.
-      // This effectively "sharpens" the lines by removing anti-aliasing blur.
-      const threshold = 180; 
-      
-      for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        
-        // Calculate Luminance
-        const avg = 0.299 * r + 0.587 * g + 0.114 * b;
-        
-        // Apply Threshold: Pure Black (0) or Pure White (255)
-        const val = avg < threshold ? 0 : 255;
-        
-        data[i] = val;     // R
-        data[i + 1] = val; // G
-        data[i + 2] = val; // B
-        // Alpha (data[i+3]) remains unchanged
+
+      try {
+        const imageData = ctx.getImageData(0, 0, size, size);
+        const data = imageData.data;
+        const threshold = 180;
+        for (let i = 0; i < data.length; i += 4) {
+          const avg = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          const val = avg < threshold ? 0 : 255;
+          data[i] = val;
+          data[i + 1] = val;
+          data[i + 2] = val;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      } catch (err) {
+        console.warn("Canvas tainted, using original image URL.", err);
+        resolve(imageSource);
       }
-      
-      ctx.putImageData(imageData, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
     };
     
     img.onerror = (e) => {

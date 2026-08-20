@@ -9,6 +9,23 @@ import {
 // Side-effect import for the legacy custom element
 import '../legacy/ToddlerDrawingDreamer';
 
+function DreamPrinterHost() {
+  const hostRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const el = document.createElement('gdm-live-audio');
+    el.style.display = 'block';
+    el.style.width = '100%';
+    el.style.height = '100%';
+    host.appendChild(el);
+    return () => {
+      el.remove();
+    };
+  }, []);
+  return <div ref={hostRef} className="w-full h-full" />;
+}
+
 export default function Tools() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [isRobotConnected, setIsRobotConnected] = useState(false);
@@ -159,8 +176,7 @@ export default function Tools() {
         <div className="absolute bottom-3 left-4 right-24 z-[999] max-w-2xl pointer-events-auto">
           {dock}
         </div>
-        {/* Render the Web Component directly */}
-        <div className="w-full h-full" dangerouslySetInnerHTML={{ __html: '<gdm-live-audio></gdm-live-audio>' }} />
+        <DreamPrinterHost />
       </div>
     );
   }

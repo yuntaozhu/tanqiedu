@@ -41,7 +41,9 @@ export class GdmLiveAudioVisuals3D extends LitElement {
   @property()
   set outputNode(node: AudioNode) {
     this._outputNode = node;
-    this.outputAnalyser = new Analyser(this._outputNode);
+    if (node && node.context.state !== 'closed') {
+      this.outputAnalyser = new Analyser(this._outputNode);
+    }
   }
   get outputNode() {
     return this._outputNode;
@@ -51,7 +53,9 @@ export class GdmLiveAudioVisuals3D extends LitElement {
   @property()
   set inputNode(node: AudioNode) {
     this._inputNode = node;
-    this.inputAnalyser = new Analyser(this._inputNode);
+    if (node && node.context.state !== 'closed') {
+      this.inputAnalyser = new Analyser(this._inputNode);
+    }
   }
   get inputNode() {
     return this._inputNode;
@@ -94,7 +98,7 @@ export class GdmLiveAudioVisuals3D extends LitElement {
     });
     
     const rect = (this as unknown as HTMLElement).getBoundingClientRect();
-    this.renderer.setSize(rect.width, rect.height);
+    this.renderer.setSize(Math.max(1, rect.width || 1), Math.max(1, rect.height || 1));
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -276,8 +280,9 @@ export class GdmLiveAudioVisuals3D extends LitElement {
 
   private onWindowResize() {
     const rect = (this as unknown as HTMLElement).getBoundingClientRect();
-    const w = rect.width;
-    const h = rect.height;
+    const w = Math.max(1, rect.width || 1);
+    const h = Math.max(1, rect.height || 1);
+    if (!this.camera || !this.renderer || !this.composer) return;
     
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
