@@ -25,6 +25,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/ideogram-proxy/, ''),
         },
+        '/ideogram-img': {
+          target: 'https://ideogram.ai',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ideogram-img/, ''),
+        },
       }
     },
   };

@@ -1,13 +1,29 @@
+/** Route Ideogram CDN URLs through our Vercel proxy so classroom networks load them faster. */
+export function proxiedIdeogramUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "api.ideogram.ai") {
+      return `/ideogram-proxy${u.pathname}${u.search}`;
+    }
+    if (u.hostname === "ideogram.ai") {
+      return `/ideogram-img${u.pathname}${u.search}`;
+    }
+  } catch {
+    /* keep original */
+  }
+  return url;
+}
+
 /**
  * Ideogram API Service — Ideogram 4.0 generate
- * POST /v1/ideogram-v4/generate  (text_prompt + square 2048)
+ * POST /v1/ideogram-v4/generate  (text_prompt + square 1024 TURBO)
  */
 export class IdeogramApiService {
   async generateImage(
     prompt: string,
     seed?: number,
     protagonist?: string,
-    referenceImageBase64?: string
+    _referenceImageBase64?: string
   ): Promise<string | null> {
     const apiKey = import.meta.env.VITE_IDEOGRAM_API_KEY;
 
@@ -27,19 +43,10 @@ export class IdeogramApiService {
 
       const fd = new FormData();
       fd.append("text_prompt", fullPrompt);
-      fd.append("resolution", "2048x2048");
+      fd.append("resolution", "1024x1024");
       fd.append("rendering_speed", "TURBO");
       if (seed !== undefined) {
         fd.append("seed", seed.toString());
-      }
-      if (referenceImageBase64) {
-        try {
-          const res = await fetch(referenceImageBase64);
-          const blob = await res.blob();
-          fd.append("style_reference_images", blob, "reference.png");
-        } catch (e) {
-          console.warn("Failed to attach reference image to Ideogram request:", e);
-        }
       }
 
       const endpoint = "/ideogram-proxy/v1/ideogram-v4/generate";
@@ -77,7 +84,7 @@ export class IdeogramApiService {
       }
 
       const url = data?.data?.[0]?.url;
-      if (url) return url;
+      if (url) return proxiedIdeogramUrl(url);
       console.error("Ideogram v4 returned no image url:", data);
     } catch (error) {
       console.error("Ideogram generation failed:", error);

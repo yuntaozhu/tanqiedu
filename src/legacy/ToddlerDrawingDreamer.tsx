@@ -6,7 +6,6 @@
 
 import { LitElement, css, html, PropertyValues, nothing } from 'lit';
 import { state, query } from 'lit/decorators.js';
-import { processLineArtImage } from '../../utils';
 import { IdeogramApiService } from '../../lib/api';
 import { emitBumiToolCue } from '../lib/bumi';
 import {
@@ -810,12 +809,11 @@ export class GdmLiveAudio extends LitElement {
   }
 
   private async callGenerateImage(prompt: string, seed?: number): Promise<string | null> {
-    const referenceImage = this.storyPanels.some((p) => p.url) ? this.anchorImageBase64 : undefined;
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error('Ideogram Timeout')), 60000)
     );
     return Promise.race([
-      this.ideogramApi.generateImage(prompt, seed, this.protagonistDescription, referenceImage),
+      this.ideogramApi.generateImage(prompt, seed, this.protagonistDescription),
       timeoutPromise,
     ]) as Promise<string | null>;
   }
@@ -825,18 +823,14 @@ export class GdmLiveAudio extends LitElement {
     const reply = (data.text_response || '').trim();
     if (reply) this.status = reply;
 
+    const prompt = wantsDrawing(data) ? drawingPromptFromTurn(data) : '';
+    if (prompt) void this.addIdeogramPanel(prompt);
+
     this.isPlayingTts = true;
     try {
       await playTtsBase64(data.audio_base64);
     } finally {
       this.isPlayingTts = false;
-    }
-
-    if (wantsDrawing(data)) {
-      const prompt = drawingPromptFromTurn(data);
-      if (prompt) {
-        void this.addIdeogramPanel(prompt);
-      }
     }
   }
 
@@ -857,17 +851,11 @@ export class GdmLiveAudio extends LitElement {
       const imageUrl = await this.callGenerateImage(prompt, this.seed);
       if (!imageUrl) throw new Error('Image generation returned null from Ideogram');
 
-      let processedImage = imageUrl;
-      try {
-        processedImage = await processLineArtImage(imageUrl, 800);
-      } catch (procErr) {
-        console.warn('Line-art process skipped, showing original Ideogram URL', procErr);
-      }
       if (!this.anchorImageBase64 && this.storyPanels.length <= 1) {
-        this.anchorImageBase64 = processedImage;
+        this.anchorImageBase64 = imageUrl;
       }
       this.storyPanels = this.storyPanels.map(p =>
-        p.id === panelId ? { ...p, url: processedImage, title: kidFriendlyTitle } : p
+        p.id === panelId ? { ...p, url: imageUrl, title: kidFriendlyTitle } : p
       );
       this.status = '画成。';
       this.savePersistence();
@@ -909,10 +897,9 @@ export class GdmLiveAudio extends LitElement {
       const imageUrl = await this.callGenerateImage(magicPrompt, Math.floor(Math.random() * 2147483647));
 
       if (imageUrl) {
-        const processedImage = await processLineArtImage(imageUrl, 800);
         this.storyPanels = [...this.storyPanels, {
           id: Date.now().toString(),
-          url: processedImage,
+          url: imageUrl,
           prompt: magicPrompt,
           title: `✨ ${kidFriendlyTitle}`,
           timestamp: Date.now()
@@ -1144,7 +1131,7 @@ export class GdmLiveAudio extends LitElement {
           ${this.storyPanels.map(panel => html`
             <div class="story-panel" id="panel-${panel.id}">
               ${panel.url ? html`
-                <img src="${panel.url}" />
+                <img src="${panel.url}" decoding="async" fetchpriority="high" />
                 ${panel.userOverlay ? html`<img src="${panel.userOverlay}" class="drawing-overlay-img" />` : nothing}
                 ${this.activeDrawingPanelId === panel.id ? html`
                   <canvas 

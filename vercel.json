@@ -6,6 +6,10 @@
       "destination": "https://api.ideogram.ai/:match*"
     },
     {
+      "source": "/ideogram-img/:match*",
+      "destination": "https://ideogram.ai/:match*"
+    },
+    {
       "source": "/replicate-proxy/:match*",
       "destination": "https://api.replicate.com/:match*"
     },

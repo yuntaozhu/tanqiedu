@@ -161,7 +161,6 @@ export class GdmLiveAudioVisuals3D extends LitElement {
     const matBody = new THREE.MeshStandardMaterial({ color: 0xFF7043, roughness: 0.4 });
     const matEye = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.1 });
     const matBlush = new THREE.MeshStandardMaterial({ color: 0xff8a80, transparent: true, opacity: 0.5 });
-    console.log(matBlush); // Use it to avoid unused error or just remove it
 
     this.body = new THREE.Mesh(new THREE.CapsuleGeometry(0.85, 1, 4, 16), matBody);
     this.body.position.y = -0.4;
