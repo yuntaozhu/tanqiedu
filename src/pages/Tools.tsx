@@ -124,7 +124,36 @@ export default function Tools() {
     }
   ];
 
-  const dock = (
+  const dockActions = dockMore
+    ? BUMI_ACTIONS
+    : BUMI_ACTIONS.filter((a) => BUMI_CLASSROOM_SAFE.includes(a.id));
+
+  const dockButtons = (
+    <>
+      {dockActions.map((a) => (
+        <button
+          key={a.code}
+          type="button"
+          title={`${a.code}=${a.name}`}
+          onClick={() => sendBumi(a.id).catch((err) => alert(err?.message || err))}
+          className={`px-2 py-1 rounded-md text-[11px] font-bold border transition text-left
+            ${a.danger ? 'border-orange-800/80 bg-orange-950/40 text-orange-200 hover:bg-orange-900/50' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
+        >
+          {a.code} {a.name}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => setDockMore((v) => !v)}
+        className="px-2 py-1 rounded-md text-[11px] font-bold border border-slate-600 bg-slate-900 text-slate-300 hover:bg-slate-800 flex items-center justify-center gap-1"
+      >
+        <ChevronsUpDown size={12} />
+        {dockMore ? '收起' : '更多'}
+      </button>
+    </>
+  );
+
+  const dockBar = (
     <div className="bg-slate-950/90 backdrop-blur-md border border-slate-700 rounded-2xl px-3 py-2 shadow-xl">
       <div className="flex items-center gap-2 mb-1.5">
         <button
@@ -138,29 +167,25 @@ export default function Tools() {
         </button>
         <span className="text-[10px] text-slate-400 truncate">{robotHint}</span>
       </div>
-      {isRobotConnected && (
-        <div className="flex flex-wrap gap-1.5 items-center">
-          {(dockMore ? BUMI_ACTIONS : BUMI_ACTIONS.filter((a) => BUMI_CLASSROOM_SAFE.includes(a.id))).map((a) => (
-            <button
-              key={a.code}
-              title={`${a.code}=${a.name}`}
-              onClick={() => sendBumi(a.id).catch((err) => alert(err?.message || err))}
-              className={`px-2 py-1 rounded-md text-[11px] font-bold border transition
-                ${a.danger ? 'border-orange-800/80 bg-orange-950/40 text-orange-200 hover:bg-orange-900/50' : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
-            >
-              {a.code} {a.name}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setDockMore((v) => !v)}
-            className="px-2 py-1 rounded-md text-[11px] font-bold border border-slate-600 bg-slate-900 text-slate-300 hover:bg-slate-800 flex items-center gap-1"
-          >
-            <ChevronsUpDown size={12} />
-            {dockMore ? '收起' : '更多'}
-          </button>
-        </div>
-      )}
+      {isRobotConnected && <div className="flex flex-wrap gap-1.5 items-center">{dockButtons}</div>}
+    </div>
+  );
+
+  const dockRail = (
+    <div className="w-[7.5rem] max-h-[calc(100vh-9rem)] overflow-y-auto bg-slate-950/92 backdrop-blur-md border border-slate-700 rounded-2xl px-2 py-2 shadow-xl flex flex-col gap-1.5">
+      <button
+        type="button"
+        onClick={handleConnectRobot}
+        className={`w-full flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl text-[11px] font-bold border leading-tight
+          ${isRobotConnected ? 'bg-emerald-500/20 text-emerald-300 border-emerald-600' : 'bg-slate-800 text-slate-200 border-slate-600 hover:bg-slate-700'}`}
+      >
+        {isRobotConnected ? <PowerOff size={14} /> : <Power size={14} />}
+        {isRobotConnected ? '断开小布米' : '外联小布米'}
+      </button>
+      <p className="text-[9px] text-slate-400 leading-snug px-0.5 break-words" title={robotHint}>
+        {robotHint}
+      </p>
+      {isRobotConnected && <div className="flex flex-col gap-1">{dockButtons}</div>}
     </div>
   );
 
@@ -173,8 +198,8 @@ export default function Tools() {
         >
           <X size={24} />
         </button>
-        <div className="absolute bottom-3 left-4 right-24 z-[999] max-w-2xl pointer-events-auto">
-          {dock}
+        <div className="absolute top-20 left-3 z-[999] pointer-events-auto">
+          {dockRail}
         </div>
         <DreamPrinterHost />
       </div>
@@ -186,7 +211,7 @@ export default function Tools() {
       <div className="text-center mb-10">
         <h1 className="text-4xl font-black text-slate-900 mb-4">赋能孩子的想象力</h1>
         <p className="text-xl text-slate-500 mb-6">探奇特色的多模态 AI 生成与交互体验矩阵</p>
-        <div className="max-w-2xl mx-auto text-left">{dock}</div>
+        <div className="max-w-2xl mx-auto text-left">{dockBar}</div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
