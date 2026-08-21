@@ -14,6 +14,10 @@
       "destination": "https://api.replicate.com/:match*"
     },
     {
+      "source": "/planecourse-media/:match*",
+      "destination": "https://5dsvuv46abrfygzd.public.blob.vercel-storage.com/planecourse/:match*"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }

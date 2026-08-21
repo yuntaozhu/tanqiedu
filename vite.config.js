@@ -30,6 +30,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/ideogram-img/, ''),
         },
+        '/planecourse-media': {
+          target: 'https://5dsvuv46abrfygzd.public.blob.vercel-storage.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/planecourse-media/, '/planecourse'),
+        },
       }
     },
   };

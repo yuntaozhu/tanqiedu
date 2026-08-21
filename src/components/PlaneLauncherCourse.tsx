@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import {
-  PLANE_NODES, PLANE_ROBOT, parsePlaneMedia, type PlaneNode, type PlaneMedia,
+  PLANE_NODES, PLANE_ROBOT, parsePlaneMedia,
 } from '../data/planeLauncher';
 
 type Props = {
@@ -87,6 +87,7 @@ export default function PlaneLauncherCourse({ robotConnected, onRobotCue }: Prop
   const [hands, setHands] = useState(0);
   const [picked, setPicked] = useState<number | null>(null);
   const [parts, setParts] = useState<string[]>([]);
+  const [needTap, setNeedTap] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -97,6 +98,7 @@ export default function PlaneLauncherCourse({ robotConnected, onRobotCue }: Prop
   const medias = (node.media || []).map(parsePlaneMedia);
   const image = medias.find((m) => m.kind === 'image');
   const video = medias.find((m) => m.kind === 'video');
+  const audioClipVisible = medias.some((m) => m.kind === 'audio');
 
   pausedRef.current = paused;
   const cueRef = useRef(onRobotCue);
@@ -105,16 +107,9 @@ export default function PlaneLauncherCourse({ robotConnected, onRobotCue }: Prop
   const stopAll = useCallback(() => {
     abortRef.current?.abort();
     window.speechSynthesis?.cancel();
-    const v = videoRef.current;
-    if (v) {
-      v.pause();
-    }
-    const a = audioRef.current;
-    if (a) {
-      a.pause();
-      a.removeAttribute('src');
-      a.load();
-    }
+    videoRef.current?.pause();
+    audioRef.current?.pause();
+    setNeedTap(false);
   }, []);
 
   const go = useCallback((next: number) => {
@@ -145,49 +140,62 @@ export default function PlaneLauncherCourse({ robotConnected, onRobotCue }: Prop
       }
     }
 
-    const playAudioLoops = (m: PlaneMedia, loops: number) =>
+    const waitEl = async <T,>(get: () => T | null): Promise<T | null> => {
+      for (let i = 0; i < 50; i++) {
+        if (signal.aborted) return null;
+        const el = get();
+        if (el) return el;
+        await waitMs(40, signal);
+      }
+      return get();
+    };
+
+    const playMedia = (el: HTMLMediaElement, src: string, fallbackSrc: string, loops: number) =>
       new Promise<void>((resolve) => {
-        const el = audioRef.current;
-        if (!el) {
-          resolve();
-          return;
-        }
         let played = 0;
-        const playOnce = () => {
+        const finish = () => {
+          el.onended = null;
+          el.onerror = null;
+          resolve();
+        };
+        const start = () => {
           if (signal.aborted) {
-            resolve();
+            finish();
             return;
           }
-          el.src = m.url;
-          el.loop = false;
-          el.play().catch(() => resolve());
+          const tryPlay = () => {
+            const p = el.play();
+            if (p) {
+              p.then(() => setNeedTap(false)).catch(() => setNeedTap(true));
+            }
+          };
+          if (el.readyState >= 2) tryPlay();
+          else el.oncanplay = () => tryPlay();
         };
         el.onended = () => {
           played += 1;
-          if (played >= loops || signal.aborted) resolve();
-          else playOnce();
+          if (played >= loops || signal.aborted) finish();
+          else {
+            el.currentTime = 0;
+            start();
+          }
         };
-        el.onerror = () => resolve();
-        signal.addEventListener('abort', () => resolve(), { once: true });
-        playOnce();
-      });
-
-    const playVideo = () =>
-      new Promise<void>((resolve) => {
-        const el = videoRef.current;
-        if (!el) {
-          resolve();
-          return;
-        }
-        const done = () => resolve();
-        el.onended = done;
-        el.onerror = done;
-        signal.addEventListener('abort', done, { once: true });
-        const tryPlay = () => {
-          el.play().catch(() => {});
+        el.onerror = () => {
+          if (el.dataset.fallback !== '1') {
+            el.dataset.fallback = '1';
+            el.src = fallbackSrc;
+            el.load();
+            start();
+            return;
+          }
+          console.warn('Media error', src, el.error);
+          finish();
         };
-        if (el.readyState >= 2) tryPlay();
-        else el.onloadeddata = tryPlay;
+        signal.addEventListener('abort', finish, { once: true });
+        el.dataset.fallback = '';
+        el.src = src;
+        el.load();
+        start();
       });
 
     const countdown = async (seconds: number) => {
@@ -204,9 +212,17 @@ export default function PlaneLauncherCourse({ robotConnected, onRobotCue }: Prop
       try {
         if (n.tts) await speak(n.tts, signal);
         if (signal.aborted) return;
-        if (videoClip) await playVideo();
+        if (videoClip) {
+          setStatus('正在加载视频…');
+          const el = await waitEl(() => videoRef.current);
+          if (el) await playMedia(el, videoClip.url, videoClip.proxyUrl, 1);
+        }
         if (signal.aborted) return;
-        if (audioClip) await playAudioLoops(audioClip, audioClip.loops);
+        if (audioClip) {
+          setStatus('正在播放音乐…');
+          const el = await waitEl(() => audioRef.current);
+          if (el) await playMedia(el, audioClip.url, audioClip.proxyUrl, audioClip.loops);
+        }
         if (signal.aborted) return;
         if (n.wait > 0) await countdown(n.wait);
         if (signal.aborted || !autoRef.current) return;
@@ -273,38 +289,66 @@ export default function PlaneLauncherCourse({ robotConnected, onRobotCue }: Prop
         </span>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={node.id}
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          className="absolute inset-0 pt-14 pb-36 px-4 md:px-10 flex flex-col md:flex-row gap-4"
-        >
-          <div className="flex-1 min-h-0 bg-white/85 backdrop-blur rounded-3xl shadow-2xl border-4 border-white overflow-hidden flex items-center justify-center relative">
-            {video ? (
-              <video
-                ref={videoRef}
-                key={video.url}
-                src={video.url}
-                className="w-full h-full object-contain bg-black"
-                playsInline
-                controls
+      <div className="absolute inset-0 pt-14 pb-36 px-4 md:px-10 flex flex-col md:flex-row gap-4">
+        <div className="flex-1 min-h-0 bg-white/85 backdrop-blur rounded-3xl shadow-2xl border-4 border-white overflow-hidden flex items-center justify-center relative">
+          <video
+            ref={videoRef}
+            className={video ? 'w-full h-full object-contain bg-black' : 'hidden'}
+            playsInline
+            controls
+            preload="auto"
+          />
+            {!video && image && (
+              <img
+                src={image.url}
+                alt={image.file}
+                className="max-w-full max-h-full object-contain"
+                draggable={false}
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (img.dataset.fallback === '1') return;
+                  img.dataset.fallback = '1';
+                  img.src = image.proxyUrl;
+                }}
               />
-            ) : image ? (
-              <img src={image.url} alt={image.file} className="max-w-full max-h-full object-contain" draggable={false} />
-            ) : (
-              <div className="text-8xl">✈️</div>
             )}
-            <audio ref={audioRef} className="hidden" />
-            {remain > 0 && (
-              <div className="absolute top-4 right-4 bg-orange-500 text-white font-black rounded-2xl px-4 py-2 text-xl shadow-lg">
-                {remain >= 60 ? `${Math.floor(remain / 60)}:${String(remain % 60).padStart(2, '0')}` : `${remain}s`}
-              </div>
-            )}
-          </div>
+          {!video && !image && (
+            <div className="text-8xl">✈️</div>
+          )}
+          <audio
+            ref={audioRef}
+            className={audioClipVisible ? 'absolute bottom-3 left-3 right-3' : 'hidden'}
+            controls
+            preload="auto"
+          />
+          {needTap && (
+            <button
+              type="button"
+              className="absolute inset-0 z-10 bg-black/50 text-white text-2xl font-black"
+              onClick={() => {
+                setNeedTap(false);
+                videoRef.current?.play().catch(() => {});
+                audioRef.current?.play().catch(() => {});
+              }}
+            >
+              点击播放
+            </button>
+          )}
+          {remain > 0 && (
+            <div className="absolute top-4 right-4 bg-orange-500 text-white font-black rounded-2xl px-4 py-2 text-xl shadow-lg">
+              {remain >= 60 ? `${Math.floor(remain / 60)}:${String(remain % 60).padStart(2, '0')}` : `${remain}s`}
+            </div>
+          )}
+        </div>
 
-          <div className="md:w-[38%] flex flex-col gap-3 min-h-0">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={node.id}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            className="md:w-[38%] flex flex-col gap-3 min-h-0"
+          >
             <div className="bg-white/90 rounded-3xl p-5 shadow-xl border-4 border-white flex-1 overflow-auto">
               <h2 className="text-2xl font-black text-sky-800 mb-3">{node.title}</h2>
               <p className="text-xl leading-relaxed text-slate-700">{node.tts || '看大屏幕，跟着老师一起做。'}</p>
@@ -380,9 +424,9 @@ export default function PlaneLauncherCourse({ robotConnected, onRobotCue }: Prop
                 <Hand /> 我飞得最远！举手 {hands > 0 ? `×${hands}` : ''}
               </button>
             )}
-          </div>
-        </motion.div>
-      </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       <div className="absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-center gap-2 bg-sky-950/80 backdrop-blur text-white rounded-2xl px-3 py-2">
         <button type="button" className="p-2 rounded-lg hover:bg-white/10" onClick={() => go(idx - 1)} disabled={idx === 0} title="上一步">

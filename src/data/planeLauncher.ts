@@ -13,7 +13,7 @@ export const PLANE_ROBOT: Record<number, string> = {
   15: 'dance2',
 };
 
-export type PlaneMedia = { file: string; url: string; loops: number; kind: 'image' | 'video' | 'audio' };
+export type PlaneMedia = { file: string; url: string; proxyUrl: string; loops: number; kind: 'image' | 'video' | 'audio' };
 
 export function parsePlaneMedia(tag: string): PlaneMedia {
   const raw = tag.replace(/^@/, '');
@@ -26,7 +26,14 @@ export function parsePlaneMedia(tag: string): PlaneMedia {
   }
   const ext = file.split('.').pop()?.toLowerCase() || '';
   const kind = ext === 'mp4' ? 'video' : ext === 'mp3' ? 'audio' : 'image';
-  return { file, loops, kind, url: `${PLANE_BLOB}/${encodeURIComponent(file)}` };
+  const encoded = encodeURIComponent(file);
+  return {
+    file,
+    loops,
+    kind,
+    url: `${PLANE_BLOB}/${encoded}`,
+    proxyUrl: `/planecourse-media/${encoded}`,
+  };
 }
 
 export type PlaneNode = {
