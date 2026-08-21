@@ -22,6 +22,8 @@ import {
 import {
   BUMI_ACTIONS, BUMI_CLASSROOM_SAFE, bumiCmd, bumiState, bumiBaseUrl, createBumiCuer,
 } from '../lib/bumi';
+import PlaneLauncherCourse from '../components/PlaneLauncherCourse';
+import { PLANE_BLOB } from '../data/planeLauncher';
 
 // 1. Two-level Mock Data Structure (Phase 2 with 10 TPR Pages)
 const mockData = [
@@ -161,6 +163,14 @@ const mockData = [
       { id: "b7", type: "robot_explain", content: "开始示教", robotEvent: { action: "STARTTEACH", duration: 2000 } },
       { id: "b8", type: "robot_explain", content: "保存示教", robotEvent: { action: "SAVETEACH", duration: 2000 } },
       { id: "b10", type: "robot_explain", content: "播放示教", robotEvent: { action: "PLAYTEACH", duration: 4000 } },
+    ]
+  },
+  {
+    id: "c7",
+    title: "第七课：神奇的飞机发射器",
+    cover: `${PLANE_BLOB}/${encodeURIComponent('发射器图.png')}`,
+    pages: [
+      { id: "pl1", type: "plane_launcher" }
     ]
   }
 ];
@@ -868,6 +878,13 @@ export default function Courseware() {
                  </div>
               )}
               
+              {currentPage.type === 'plane_launcher' && (
+                <PlaneLauncherCourse
+                  robotConnected={isRobotConnected}
+                  onRobotCue={(action) => cue(action, 0)}
+                />
+              )}
+
               {currentPage.type === 'reward' && (
                  <div className="w-full h-full bg-gradient-to-br from-amber-500 to-orange-700 flex flex-col items-center justify-center relative overflow-hidden">
                      <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 15 }} className="bg-white/10 p-12 rounded-full backdrop-blur-md mb-8 border border-white/20 shadow-2xl">
@@ -933,11 +950,15 @@ export default function Courseware() {
            {/* Navigation Group */}
            <div className="flex items-center gap-1.5 border-r border-slate-700 pr-3 mr-3 shrink-0">
              <ToolBtn icon={Home} label="返回主页" onClick={() => { setActiveCourseId(null); setIsFullscreen(false); }} />
+             {currentPage.type !== 'plane_launcher' && (
+               <>
              <div className="flex items-center gap-1 px-2 border-r border-l border-slate-700 mx-1">
                  <span className="text-xs text-slate-500 font-mono w-12 text-center">{currentPageIdx + 1}/{activeCourse.pages.length}</span>
              </div>
              <ToolBtn icon={ChevronLeft} label="上一页" onClick={() => { setCurrentPageIdx(p => Math.max(0, p - 1)); clearCanvas(); setRobotStatus('idle'); }} disabled={currentPageIdx === 0} />
              <ToolBtn icon={ChevronRight} label="下一页" onClick={() => { setCurrentPageIdx(p => Math.min(activeCourse.pages.length - 1, p + 1)); clearCanvas(); setRobotStatus('idle'); }} disabled={currentPageIdx === activeCourse.pages.length - 1} />
+               </>
+             )}
            </div>
 
            {/* Media Group */}
@@ -986,12 +1007,19 @@ export default function Courseware() {
              }}
              className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-lg cursor-pointer group"
            >
-              <div className="h-48 bg-gradient-to-br from-indigo-500 to-blue-600 relative flex items-center justify-center p-6 text-center">
-                 <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/folder/600/400')] mix-blend-overlay opacity-30 group-hover:opacity-50 transition-opacity"></div>
+              <div className="h-48 bg-gradient-to-br from-sky-400 to-orange-400 relative flex items-center justify-center p-6 text-center overflow-hidden">
+                 {(course as any).cover ? (
+                   <img src={(course as any).cover} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
+                 ) : (
+                   <div className="absolute inset-0 bg-[url('https://picsum.photos/seed/folder/600/400')] mix-blend-overlay opacity-30 group-hover:opacity-50 transition-opacity"></div>
+                 )}
+                 <div className="absolute inset-0 bg-gradient-to-t from-sky-950/70 to-transparent" />
                  <h2 className="text-2xl font-bold text-white relative z-10 drop-shadow-md">{course.title}</h2>
               </div>
               <div className="p-6 flex justify-between items-center bg-slate-50">
-                 <div className="text-slate-500 text-sm font-medium">包含核心教学 {course.pages.length} 页</div>
+                 <div className="text-slate-500 text-sm font-medium">
+                   {course.id === 'c7' ? '41 步互动课堂 · 可外联小布米' : `包含核心教学 ${course.pages.length} 页`}
+                 </div>
                  <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     <Play size={18} className="ml-1" />
                  </div>
